@@ -4,6 +4,7 @@
 package webcoderservice
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,11 +12,74 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/oapi-codegen/runtime"
 )
 
 const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
+
+// Defines values for HandlersInitiativeRunState.
+const (
+	AwaitingHuman HandlersInitiativeRunState = "awaiting-human"
+	Deferred      HandlersInitiativeRunState = "deferred"
+	Done          HandlersInitiativeRunState = "done"
+	Iterating     HandlersInitiativeRunState = "iterating"
+	Killed        HandlersInitiativeRunState = "killed"
+	Queued        HandlersInitiativeRunState = "queued"
+	Running       HandlersInitiativeRunState = "running"
+)
+
+// HandlersCreateInitiativeRequest defines model for handlers.CreateInitiativeRequest.
+type HandlersCreateInitiativeRequest struct {
+	// InitiativeYaml InitiativeYaml is the full YAML body of the initiative. Mutually
+	// exclusive with Template/Params.
+	InitiativeYaml *string `json:"initiativeYaml,omitempty"`
+
+	// Params Params populate the template's variables when Template is set.
+	Params *map[string]interface{} `json:"params,omitempty"`
+
+	// Template Template is the name of an initiatives/_templates/<name>.yaml
+	// template to instantiate. Mutually exclusive with InitiativeYaml.
+	Template *string `json:"template,omitempty"`
+}
+
+// HandlersCreateInitiativeResponseDto defines model for handlers.CreateInitiativeResponseDto.
+type HandlersCreateInitiativeResponseDto struct {
+	Logs  *string `json:"logs,omitempty"`
+	RunId *string `json:"runId,omitempty"`
+	Self  *string `json:"self,omitempty"`
+	State *string `json:"state,omitempty"`
+}
+
+// HandlersInitiativeAssets defines model for handlers.InitiativeAssets.
+type HandlersInitiativeAssets struct {
+	Coverage      *string `json:"coverage,omitempty"`
+	StickyComment *string `json:"stickyComment,omitempty"`
+	Trace         *string `json:"trace,omitempty"`
+}
+
+// HandlersInitiativeRun defines model for handlers.InitiativeRun.
+type HandlersInitiativeRun struct {
+	Assets      *HandlersInitiativeAssets   `json:"assets,omitempty"`
+	BudgetIter  *int                        `json:"budgetIter,omitempty"`
+	CreatedAt   *string                     `json:"createdAt,omitempty"`
+	DeferReason *string                     `json:"deferReason,omitempty"`
+	Initiative  *string                     `json:"initiative,omitempty"`
+	Iteration   *int                        `json:"iteration,omitempty"`
+	LastUpdate  *string                     `json:"lastUpdate,omitempty"`
+	ProjectId   *string                     `json:"projectId,omitempty"`
+	RunId       *string                     `json:"runId,omitempty"`
+	SourcePr    *string                     `json:"sourcePr,omitempty"`
+	State       *HandlersInitiativeRunState `json:"state,omitempty"`
+	TargetPr    *string                     `json:"targetPr,omitempty"`
+	Tenant      *string                     `json:"tenant,omitempty"`
+	TriggeredBy *string                     `json:"triggeredBy,omitempty"`
+}
+
+// HandlersInitiativeRunState defines model for HandlersInitiativeRun.State.
+type HandlersInitiativeRunState string
 
 // HandlersMeResponseDto defines model for handlers.MeResponseDto.
 type HandlersMeResponseDto struct {
@@ -23,6 +87,9 @@ type HandlersMeResponseDto struct {
 	Scopes      *[]string `json:"scopes,omitempty"`
 	UserId      *string   `json:"userId,omitempty"`
 }
+
+// PostApiV1ProjectsProjectIdInitiativesJSONRequestBody defines body for PostApiV1ProjectsProjectIdInitiatives for application/json ContentType.
+type PostApiV1ProjectsProjectIdInitiativesJSONRequestBody = HandlersCreateInitiativeRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -97,8 +164,25 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// DeleteApiV1InitiativesRunId request
+	DeleteApiV1InitiativesRunId(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1InitiativesRunId request
+	GetApiV1InitiativesRunId(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1InitiativesRunIdLogs request
+	GetApiV1InitiativesRunIdLogs(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetApiV1Me request
 	GetApiV1Me(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1ProjectsProjectIdInitiatives request
+	GetApiV1ProjectsProjectIdInitiatives(ctx context.Context, projectId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostApiV1ProjectsProjectIdInitiativesWithBody request with any body
+	PostApiV1ProjectsProjectIdInitiativesWithBody(ctx context.Context, projectId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostApiV1ProjectsProjectIdInitiatives(ctx context.Context, projectId string, body PostApiV1ProjectsProjectIdInitiativesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -107,8 +191,80 @@ type ClientInterface interface {
 	GetHealthReady(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
+func (c *Client) DeleteApiV1InitiativesRunId(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteApiV1InitiativesRunIdRequest(c.Server, runId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1InitiativesRunId(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1InitiativesRunIdRequest(c.Server, runId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1InitiativesRunIdLogs(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1InitiativesRunIdLogsRequest(c.Server, runId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetApiV1Me(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetApiV1MeRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1ProjectsProjectIdInitiatives(ctx context.Context, projectId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ProjectsProjectIdInitiativesRequest(c.Server, projectId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1ProjectsProjectIdInitiativesWithBody(ctx context.Context, projectId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ProjectsProjectIdInitiativesRequestWithBody(c.Server, projectId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1ProjectsProjectIdInitiatives(ctx context.Context, projectId string, body PostApiV1ProjectsProjectIdInitiativesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ProjectsProjectIdInitiativesRequest(c.Server, projectId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -143,6 +299,108 @@ func (c *Client) GetHealthReady(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
+// NewDeleteApiV1InitiativesRunIdRequest generates requests for DeleteApiV1InitiativesRunId
+func NewDeleteApiV1InitiativesRunIdRequest(server string, runId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runId", runtime.ParamLocationPath, runId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/initiatives/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1InitiativesRunIdRequest generates requests for GetApiV1InitiativesRunId
+func NewGetApiV1InitiativesRunIdRequest(server string, runId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runId", runtime.ParamLocationPath, runId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/initiatives/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1InitiativesRunIdLogsRequest generates requests for GetApiV1InitiativesRunIdLogs
+func NewGetApiV1InitiativesRunIdLogsRequest(server string, runId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runId", runtime.ParamLocationPath, runId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/initiatives/%s/logs", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetApiV1MeRequest generates requests for GetApiV1Me
 func NewGetApiV1MeRequest(server string) (*http.Request, error) {
 	var err error
@@ -166,6 +424,87 @@ func NewGetApiV1MeRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewGetApiV1ProjectsProjectIdInitiativesRequest generates requests for GetApiV1ProjectsProjectIdInitiatives
+func NewGetApiV1ProjectsProjectIdInitiativesRequest(server string, projectId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "projectId", runtime.ParamLocationPath, projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/initiatives", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostApiV1ProjectsProjectIdInitiativesRequest calls the generic PostApiV1ProjectsProjectIdInitiatives builder with application/json body
+func NewPostApiV1ProjectsProjectIdInitiativesRequest(server string, projectId string, body PostApiV1ProjectsProjectIdInitiativesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostApiV1ProjectsProjectIdInitiativesRequestWithBody(server, projectId, "application/json", bodyReader)
+}
+
+// NewPostApiV1ProjectsProjectIdInitiativesRequestWithBody generates requests for PostApiV1ProjectsProjectIdInitiatives with any type of body
+func NewPostApiV1ProjectsProjectIdInitiativesRequestWithBody(server string, projectId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "projectId", runtime.ParamLocationPath, projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/initiatives", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -267,14 +606,100 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// DeleteApiV1InitiativesRunIdWithResponse request
+	DeleteApiV1InitiativesRunIdWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*DeleteApiV1InitiativesRunIdResponse, error)
+
+	// GetApiV1InitiativesRunIdWithResponse request
+	GetApiV1InitiativesRunIdWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*GetApiV1InitiativesRunIdResponse, error)
+
+	// GetApiV1InitiativesRunIdLogsWithResponse request
+	GetApiV1InitiativesRunIdLogsWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*GetApiV1InitiativesRunIdLogsResponse, error)
+
 	// GetApiV1MeWithResponse request
 	GetApiV1MeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1MeResponse, error)
+
+	// GetApiV1ProjectsProjectIdInitiativesWithResponse request
+	GetApiV1ProjectsProjectIdInitiativesWithResponse(ctx context.Context, projectId string, reqEditors ...RequestEditorFn) (*GetApiV1ProjectsProjectIdInitiativesResponse, error)
+
+	// PostApiV1ProjectsProjectIdInitiativesWithBodyWithResponse request with any body
+	PostApiV1ProjectsProjectIdInitiativesWithBodyWithResponse(ctx context.Context, projectId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ProjectsProjectIdInitiativesResponse, error)
+
+	PostApiV1ProjectsProjectIdInitiativesWithResponse(ctx context.Context, projectId string, body PostApiV1ProjectsProjectIdInitiativesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ProjectsProjectIdInitiativesResponse, error)
 
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
 
 	// GetHealthReadyWithResponse request
 	GetHealthReadyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthReadyResponse, error)
+}
+
+type DeleteApiV1InitiativesRunIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON204      *map[string]string
+	JSON501      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteApiV1InitiativesRunIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteApiV1InitiativesRunIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1InitiativesRunIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersInitiativeRun
+	JSON404      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1InitiativesRunIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1InitiativesRunIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1InitiativesRunIdLogsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]string
+	JSON404      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1InitiativesRunIdLogsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1InitiativesRunIdLogsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetApiV1MeResponse struct {
@@ -294,6 +719,52 @@ func (r GetApiV1MeResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetApiV1MeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1ProjectsProjectIdInitiativesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]HandlersInitiativeRun
+	JSON401      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1ProjectsProjectIdInitiativesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1ProjectsProjectIdInitiativesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostApiV1ProjectsProjectIdInitiativesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *HandlersCreateInitiativeResponseDto
+	JSON501      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostApiV1ProjectsProjectIdInitiativesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostApiV1ProjectsProjectIdInitiativesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -342,6 +813,33 @@ func (r GetHealthReadyResponse) StatusCode() int {
 	return 0
 }
 
+// DeleteApiV1InitiativesRunIdWithResponse request returning *DeleteApiV1InitiativesRunIdResponse
+func (c *ClientWithResponses) DeleteApiV1InitiativesRunIdWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*DeleteApiV1InitiativesRunIdResponse, error) {
+	rsp, err := c.DeleteApiV1InitiativesRunId(ctx, runId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteApiV1InitiativesRunIdResponse(rsp)
+}
+
+// GetApiV1InitiativesRunIdWithResponse request returning *GetApiV1InitiativesRunIdResponse
+func (c *ClientWithResponses) GetApiV1InitiativesRunIdWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*GetApiV1InitiativesRunIdResponse, error) {
+	rsp, err := c.GetApiV1InitiativesRunId(ctx, runId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1InitiativesRunIdResponse(rsp)
+}
+
+// GetApiV1InitiativesRunIdLogsWithResponse request returning *GetApiV1InitiativesRunIdLogsResponse
+func (c *ClientWithResponses) GetApiV1InitiativesRunIdLogsWithResponse(ctx context.Context, runId string, reqEditors ...RequestEditorFn) (*GetApiV1InitiativesRunIdLogsResponse, error) {
+	rsp, err := c.GetApiV1InitiativesRunIdLogs(ctx, runId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1InitiativesRunIdLogsResponse(rsp)
+}
+
 // GetApiV1MeWithResponse request returning *GetApiV1MeResponse
 func (c *ClientWithResponses) GetApiV1MeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1MeResponse, error) {
 	rsp, err := c.GetApiV1Me(ctx, reqEditors...)
@@ -349,6 +847,32 @@ func (c *ClientWithResponses) GetApiV1MeWithResponse(ctx context.Context, reqEdi
 		return nil, err
 	}
 	return ParseGetApiV1MeResponse(rsp)
+}
+
+// GetApiV1ProjectsProjectIdInitiativesWithResponse request returning *GetApiV1ProjectsProjectIdInitiativesResponse
+func (c *ClientWithResponses) GetApiV1ProjectsProjectIdInitiativesWithResponse(ctx context.Context, projectId string, reqEditors ...RequestEditorFn) (*GetApiV1ProjectsProjectIdInitiativesResponse, error) {
+	rsp, err := c.GetApiV1ProjectsProjectIdInitiatives(ctx, projectId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1ProjectsProjectIdInitiativesResponse(rsp)
+}
+
+// PostApiV1ProjectsProjectIdInitiativesWithBodyWithResponse request with arbitrary body returning *PostApiV1ProjectsProjectIdInitiativesResponse
+func (c *ClientWithResponses) PostApiV1ProjectsProjectIdInitiativesWithBodyWithResponse(ctx context.Context, projectId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ProjectsProjectIdInitiativesResponse, error) {
+	rsp, err := c.PostApiV1ProjectsProjectIdInitiativesWithBody(ctx, projectId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1ProjectsProjectIdInitiativesResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostApiV1ProjectsProjectIdInitiativesWithResponse(ctx context.Context, projectId string, body PostApiV1ProjectsProjectIdInitiativesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ProjectsProjectIdInitiativesResponse, error) {
+	rsp, err := c.PostApiV1ProjectsProjectIdInitiatives(ctx, projectId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1ProjectsProjectIdInitiativesResponse(rsp)
 }
 
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
@@ -367,6 +891,105 @@ func (c *ClientWithResponses) GetHealthReadyWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseGetHealthReadyResponse(rsp)
+}
+
+// ParseDeleteApiV1InitiativesRunIdResponse parses an HTTP response from a DeleteApiV1InitiativesRunIdWithResponse call
+func ParseDeleteApiV1InitiativesRunIdResponse(rsp *http.Response) (*DeleteApiV1InitiativesRunIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteApiV1InitiativesRunIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 204:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON204 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1InitiativesRunIdResponse parses an HTTP response from a GetApiV1InitiativesRunIdWithResponse call
+func ParseGetApiV1InitiativesRunIdResponse(rsp *http.Response) (*GetApiV1InitiativesRunIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1InitiativesRunIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersInitiativeRun
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1InitiativesRunIdLogsResponse parses an HTTP response from a GetApiV1InitiativesRunIdLogsWithResponse call
+func ParseGetApiV1InitiativesRunIdLogsResponse(rsp *http.Response) (*GetApiV1InitiativesRunIdLogsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1InitiativesRunIdLogsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetApiV1MeResponse parses an HTTP response from a GetApiV1MeWithResponse call
@@ -396,6 +1019,72 @@ func ParseGetApiV1MeResponse(rsp *http.Response) (*GetApiV1MeResponse, error) {
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1ProjectsProjectIdInitiativesResponse parses an HTTP response from a GetApiV1ProjectsProjectIdInitiativesWithResponse call
+func ParseGetApiV1ProjectsProjectIdInitiativesResponse(rsp *http.Response) (*GetApiV1ProjectsProjectIdInitiativesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1ProjectsProjectIdInitiativesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []HandlersInitiativeRun
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostApiV1ProjectsProjectIdInitiativesResponse parses an HTTP response from a PostApiV1ProjectsProjectIdInitiativesWithResponse call
+func ParsePostApiV1ProjectsProjectIdInitiativesResponse(rsp *http.Response) (*PostApiV1ProjectsProjectIdInitiativesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostApiV1ProjectsProjectIdInitiativesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest HandlersCreateInitiativeResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
