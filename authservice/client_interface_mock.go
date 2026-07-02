@@ -16,14 +16,384 @@ type MockClientInterface struct {
 	mock.Mock
 }
 
-// DisableTwoFactor provides a mock function with given fields: ctx, params, reqEditors
-func (_m *MockClientInterface) DisableTwoFactor(ctx context.Context, params *DisableTwoFactorParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// AdminActivateUser provides a mock function with given fields: ctx, id, reqEditors
+func (_m *MockClientInterface) AdminActivateUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, params)
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminActivateUser")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, id, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, id, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminDeactivateUser provides a mock function with given fields: ctx, id, reqEditors
+func (_m *MockClientInterface) AdminDeactivateUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminDeactivateUser")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, id, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, id, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminGetUser provides a mock function with given fields: ctx, id, reqEditors
+func (_m *MockClientInterface) AdminGetUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminGetUser")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, id, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, id, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminListUsers provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) AdminListUsers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminListUsers")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminSetUserPermissions provides a mock function with given fields: ctx, id, body, reqEditors
+func (_m *MockClientInterface) AdminSetUserPermissions(ctx context.Context, id string, body ModelsAdminSetPermissionsRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminSetUserPermissions")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ModelsAdminSetPermissionsRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, id, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ModelsAdminSetPermissionsRequest, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, id, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ModelsAdminSetPermissionsRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminSetUserPermissionsWithBody provides a mock function with given fields: ctx, id, contentType, body, reqEditors
+func (_m *MockClientInterface) AdminSetUserPermissionsWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminSetUserPermissionsWithBody")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, id, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, id, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminSetUserRole provides a mock function with given fields: ctx, id, body, reqEditors
+func (_m *MockClientInterface) AdminSetUserRole(ctx context.Context, id string, body ModelsAdminSetRoleRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminSetUserRole")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ModelsAdminSetRoleRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, id, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ModelsAdminSetRoleRequest, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, id, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ModelsAdminSetRoleRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminSetUserRoleWithBody provides a mock function with given fields: ctx, id, contentType, body, reqEditors
+func (_m *MockClientInterface) AdminSetUserRoleWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminSetUserRoleWithBody")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, id, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, id, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DCRRegister provides a mock function with given fields: ctx, body, reqEditors
+func (_m *MockClientInterface) DCRRegister(ctx context.Context, body ModelsDCRRegisterRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DCRRegister")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ModelsDCRRegisterRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ModelsDCRRegisterRequest, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ModelsDCRRegisterRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DCRRegisterWithBody provides a mock function with given fields: ctx, contentType, body, reqEditors
+func (_m *MockClientInterface) DCRRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DCRRegisterWithBody")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DisableTwoFactor provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) DisableTwoFactor(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -33,19 +403,19 @@ func (_m *MockClientInterface) DisableTwoFactor(ctx context.Context, params *Dis
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *DisableTwoFactorParams, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *DisableTwoFactorParams, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *DisableTwoFactorParams, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -53,14 +423,14 @@ func (_m *MockClientInterface) DisableTwoFactor(ctx context.Context, params *Dis
 	return r0, r1
 }
 
-// EnableTwoFactor provides a mock function with given fields: ctx, params, reqEditors
-func (_m *MockClientInterface) EnableTwoFactor(ctx context.Context, params *EnableTwoFactorParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// EnableTwoFactor provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) EnableTwoFactor(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, params)
+	_ca = append(_ca, ctx)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -70,19 +440,19 @@ func (_m *MockClientInterface) EnableTwoFactor(ctx context.Context, params *Enab
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *EnableTwoFactorParams, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *EnableTwoFactorParams, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *EnableTwoFactorParams, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -201,14 +571,14 @@ func (_m *MockClientInterface) GetLogout(ctx context.Context, params *GetLogoutP
 	return r0, r1
 }
 
-// GetMe provides a mock function with given fields: ctx, params, reqEditors
-func (_m *MockClientInterface) GetMe(ctx context.Context, params *GetMeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// GetMe provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) GetMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, params)
+	_ca = append(_ca, ctx)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -218,19 +588,19 @@ func (_m *MockClientInterface) GetMe(ctx context.Context, params *GetMeParams, r
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *GetMeParams, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *GetMeParams, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *GetMeParams, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -386,14 +756,14 @@ func (_m *MockClientInterface) SubmitTwoFactorWithBody(ctx context.Context, para
 	return r0, r1
 }
 
-// VerifyTwoFactor provides a mock function with given fields: ctx, params, body, reqEditors
-func (_m *MockClientInterface) VerifyTwoFactor(ctx context.Context, params *VerifyTwoFactorParams, body ModelsTwoFactorSubmitRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// VerifyTwoFactor provides a mock function with given fields: ctx, body, reqEditors
+func (_m *MockClientInterface) VerifyTwoFactor(ctx context.Context, body ModelsTwoFactorSubmitRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, params, body)
+	_ca = append(_ca, ctx, body)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -403,19 +773,19 @@ func (_m *MockClientInterface) VerifyTwoFactor(ctx context.Context, params *Veri
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *VerifyTwoFactorParams, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, params, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *VerifyTwoFactorParams, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, params, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *VerifyTwoFactorParams, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, params, body, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -423,14 +793,14 @@ func (_m *MockClientInterface) VerifyTwoFactor(ctx context.Context, params *Veri
 	return r0, r1
 }
 
-// VerifyTwoFactorWithBody provides a mock function with given fields: ctx, params, contentType, body, reqEditors
-func (_m *MockClientInterface) VerifyTwoFactorWithBody(ctx context.Context, params *VerifyTwoFactorParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// VerifyTwoFactorWithBody provides a mock function with given fields: ctx, contentType, body, reqEditors
+func (_m *MockClientInterface) VerifyTwoFactorWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, params, contentType, body)
+	_ca = append(_ca, ctx, contentType, body)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -440,19 +810,19 @@ func (_m *MockClientInterface) VerifyTwoFactorWithBody(ctx context.Context, para
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *VerifyTwoFactorParams, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, params, contentType, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, contentType, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *VerifyTwoFactorParams, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, params, contentType, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, contentType, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *VerifyTwoFactorParams, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, params, contentType, body, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, contentType, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}

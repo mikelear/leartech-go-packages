@@ -20,6 +20,16 @@ const (
 	ApiKeyAuthScopes = "ApiKeyAuth.Scopes"
 )
 
+// ModelsAdminSetPermissionsRequest defines model for models.AdminSetPermissionsRequest.
+type ModelsAdminSetPermissionsRequest struct {
+	Permissions *[]string `json:"permissions,omitempty"`
+}
+
+// ModelsAdminSetRoleRequest defines model for models.AdminSetRoleRequest.
+type ModelsAdminSetRoleRequest struct {
+	Role string `json:"role"`
+}
+
 // ModelsAuthResponseDto defines model for models.AuthResponseDto.
 type ModelsAuthResponseDto struct {
 	DisplayName *string   `json:"displayName,omitempty"`
@@ -27,6 +37,41 @@ type ModelsAuthResponseDto struct {
 	Permissions *[]string `json:"permissions,omitempty"`
 	Requires2fa *bool     `json:"requires2fa,omitempty"`
 	UserId      *string   `json:"userId,omitempty"`
+}
+
+// ModelsDCRError defines model for models.DCRError.
+type ModelsDCRError struct {
+	Error            *string `json:"error,omitempty"`
+	ErrorDescription *string `json:"error_description,omitempty"`
+}
+
+// ModelsDCRRegisterRequest defines model for models.DCRRegisterRequest.
+type ModelsDCRRegisterRequest struct {
+	ClientName              *string   `json:"client_name,omitempty"`
+	Contacts                *[]string `json:"contacts,omitempty"`
+	GrantTypes              *[]string `json:"grant_types,omitempty"`
+	RedirectUris            *[]string `json:"redirect_uris,omitempty"`
+	ResponseTypes           *[]string `json:"response_types,omitempty"`
+	Scope                   *string   `json:"scope,omitempty"`
+	SoftwareId              *string   `json:"software_id,omitempty"`
+	SoftwareVersion         *string   `json:"software_version,omitempty"`
+	TokenEndpointAuthMethod *string   `json:"token_endpoint_auth_method,omitempty"`
+}
+
+// ModelsDCRRegisterResponseDto defines model for models.DCRRegisterResponseDto.
+type ModelsDCRRegisterResponseDto struct {
+	ClientId                *string   `json:"client_id,omitempty"`
+	ClientIdIssuedAt        *int      `json:"client_id_issued_at,omitempty"`
+	ClientName              *string   `json:"client_name,omitempty"`
+	ClientSecret            *string   `json:"client_secret,omitempty"`
+	ClientSecretExpiresAt   *int      `json:"client_secret_expires_at,omitempty"`
+	GrantTypes              *[]string `json:"grant_types,omitempty"`
+	RedirectUris            *[]string `json:"redirect_uris,omitempty"`
+	ResponseTypes           *[]string `json:"response_types,omitempty"`
+	Scope                   *string   `json:"scope,omitempty"`
+	SoftwareId              *string   `json:"software_id,omitempty"`
+	SoftwareVersion         *string   `json:"software_version,omitempty"`
+	TokenEndpointAuthMethod *string   `json:"token_endpoint_auth_method,omitempty"`
 }
 
 // ModelsLoginRequest defines model for models.LoginRequest.
@@ -45,6 +90,19 @@ type ModelsTwoFactorEnableResponseDto struct {
 // ModelsTwoFactorSubmitRequest defines model for models.TwoFactorSubmitRequest.
 type ModelsTwoFactorSubmitRequest struct {
 	Code string `json:"code"`
+}
+
+// ModelsUser defines model for models.User.
+type ModelsUser struct {
+	Active      *bool     `json:"active,omitempty"`
+	CreatedAt   *string   `json:"createdAt,omitempty"`
+	DisplayName *string   `json:"displayName,omitempty"`
+	Email       *string   `json:"email,omitempty"`
+	Id          *string   `json:"id,omitempty"`
+	Permissions *[]string `json:"permissions,omitempty"`
+	Role        *string   `json:"role,omitempty"`
+	TenantId    *string   `json:"tenantId,omitempty"`
+	UpdatedAt   *string   `json:"updatedAt,omitempty"`
 }
 
 // GetConsentParams defines parameters for GetConsent.
@@ -71,38 +129,17 @@ type GetLogoutParams struct {
 	LogoutChallenge string `form:"logout_challenge" json:"logout_challenge"`
 }
 
-// GetMeParams defines parameters for GetMe.
-type GetMeParams struct {
-	// UserId User ID
-	UserId string `form:"user_id" json:"user_id"`
-}
-
-// DisableTwoFactorParams defines parameters for DisableTwoFactor.
-type DisableTwoFactorParams struct {
-	// UserId User ID
-	UserId string `form:"user_id" json:"user_id"`
-}
-
-// EnableTwoFactorParams defines parameters for EnableTwoFactor.
-type EnableTwoFactorParams struct {
-	// UserId User ID
-	UserId string `form:"user_id" json:"user_id"`
-}
-
 // SubmitTwoFactorParams defines parameters for SubmitTwoFactor.
 type SubmitTwoFactorParams struct {
 	// LoginChallenge Hydra login challenge
 	LoginChallenge string `form:"login_challenge" json:"login_challenge"`
-
-	// UserId User ID
-	UserId string `form:"user_id" json:"user_id"`
 }
 
-// VerifyTwoFactorParams defines parameters for VerifyTwoFactor.
-type VerifyTwoFactorParams struct {
-	// UserId User ID
-	UserId string `form:"user_id" json:"user_id"`
-}
+// AdminSetUserPermissionsJSONRequestBody defines body for AdminSetUserPermissions for application/json ContentType.
+type AdminSetUserPermissionsJSONRequestBody = ModelsAdminSetPermissionsRequest
+
+// AdminSetUserRoleJSONRequestBody defines body for AdminSetUserRole for application/json ContentType.
+type AdminSetUserRoleJSONRequestBody = ModelsAdminSetRoleRequest
 
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.
 type PostLoginJSONRequestBody = ModelsLoginRequest
@@ -112,6 +149,9 @@ type SubmitTwoFactorJSONRequestBody = ModelsTwoFactorSubmitRequest
 
 // VerifyTwoFactorJSONRequestBody defines body for VerifyTwoFactor for application/json ContentType.
 type VerifyTwoFactorJSONRequestBody = ModelsTwoFactorSubmitRequest
+
+// DCRRegisterJSONRequestBody defines body for DCRRegister for application/json ContentType.
+type DCRRegisterJSONRequestBody = ModelsDCRRegisterRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -186,6 +226,28 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// AdminListUsers request
+	AdminListUsers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminGetUser request
+	AdminGetUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminActivateUser request
+	AdminActivateUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminDeactivateUser request
+	AdminDeactivateUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminSetUserPermissionsWithBody request with any body
+	AdminSetUserPermissionsWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AdminSetUserPermissions(ctx context.Context, id string, body AdminSetUserPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminSetUserRoleWithBody request with any body
+	AdminSetUserRoleWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AdminSetUserRole(ctx context.Context, id string, body AdminSetUserRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetConsent request
 	GetConsent(ctx context.Context, params *GetConsentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -201,13 +263,13 @@ type ClientInterface interface {
 	GetLogout(ctx context.Context, params *GetLogoutParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMe request
-	GetMe(ctx context.Context, params *GetMeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DisableTwoFactor request
-	DisableTwoFactor(ctx context.Context, params *DisableTwoFactorParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DisableTwoFactor(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// EnableTwoFactor request
-	EnableTwoFactor(ctx context.Context, params *EnableTwoFactorParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	EnableTwoFactor(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SubmitTwoFactorWithBody request with any body
 	SubmitTwoFactorWithBody(ctx context.Context, params *SubmitTwoFactorParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -215,9 +277,110 @@ type ClientInterface interface {
 	SubmitTwoFactor(ctx context.Context, params *SubmitTwoFactorParams, body SubmitTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// VerifyTwoFactorWithBody request with any body
-	VerifyTwoFactorWithBody(ctx context.Context, params *VerifyTwoFactorParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	VerifyTwoFactorWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	VerifyTwoFactor(ctx context.Context, params *VerifyTwoFactorParams, body VerifyTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	VerifyTwoFactor(ctx context.Context, body VerifyTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DCRRegisterWithBody request with any body
+	DCRRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	DCRRegister(ctx context.Context, body DCRRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) AdminListUsers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminListUsersRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminGetUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminGetUserRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminActivateUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminActivateUserRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminDeactivateUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminDeactivateUserRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminSetUserPermissionsWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminSetUserPermissionsRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminSetUserPermissions(ctx context.Context, id string, body AdminSetUserPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminSetUserPermissionsRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminSetUserRoleWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminSetUserRoleRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminSetUserRole(ctx context.Context, id string, body AdminSetUserRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminSetUserRoleRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetConsent(ctx context.Context, params *GetConsentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -280,8 +443,8 @@ func (c *Client) GetLogout(ctx context.Context, params *GetLogoutParams, reqEdit
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMe(ctx context.Context, params *GetMeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMeRequest(c.Server, params)
+func (c *Client) GetMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMeRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -292,8 +455,8 @@ func (c *Client) GetMe(ctx context.Context, params *GetMeParams, reqEditors ...R
 	return c.Client.Do(req)
 }
 
-func (c *Client) DisableTwoFactor(ctx context.Context, params *DisableTwoFactorParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDisableTwoFactorRequest(c.Server, params)
+func (c *Client) DisableTwoFactor(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisableTwoFactorRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -304,8 +467,8 @@ func (c *Client) DisableTwoFactor(ctx context.Context, params *DisableTwoFactorP
 	return c.Client.Do(req)
 }
 
-func (c *Client) EnableTwoFactor(ctx context.Context, params *EnableTwoFactorParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewEnableTwoFactorRequest(c.Server, params)
+func (c *Client) EnableTwoFactor(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEnableTwoFactorRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -340,8 +503,8 @@ func (c *Client) SubmitTwoFactor(ctx context.Context, params *SubmitTwoFactorPar
 	return c.Client.Do(req)
 }
 
-func (c *Client) VerifyTwoFactorWithBody(ctx context.Context, params *VerifyTwoFactorParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewVerifyTwoFactorRequestWithBody(c.Server, params, contentType, body)
+func (c *Client) VerifyTwoFactorWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVerifyTwoFactorRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -352,8 +515,8 @@ func (c *Client) VerifyTwoFactorWithBody(ctx context.Context, params *VerifyTwoF
 	return c.Client.Do(req)
 }
 
-func (c *Client) VerifyTwoFactor(ctx context.Context, params *VerifyTwoFactorParams, body VerifyTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewVerifyTwoFactorRequest(c.Server, params, body)
+func (c *Client) VerifyTwoFactor(ctx context.Context, body VerifyTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVerifyTwoFactorRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -362,6 +525,253 @@ func (c *Client) VerifyTwoFactor(ctx context.Context, params *VerifyTwoFactorPar
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+func (c *Client) DCRRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDCRRegisterRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DCRRegister(ctx context.Context, body DCRRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDCRRegisterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewAdminListUsersRequest generates requests for AdminListUsers
+func NewAdminListUsersRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminGetUserRequest generates requests for AdminGetUser
+func NewAdminGetUserRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminActivateUserRequest generates requests for AdminActivateUser
+func NewAdminActivateUserRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users/%s/activate", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminDeactivateUserRequest generates requests for AdminDeactivateUser
+func NewAdminDeactivateUserRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users/%s/deactivate", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminSetUserPermissionsRequest calls the generic AdminSetUserPermissions builder with application/json body
+func NewAdminSetUserPermissionsRequest(server string, id string, body AdminSetUserPermissionsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAdminSetUserPermissionsRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAdminSetUserPermissionsRequestWithBody generates requests for AdminSetUserPermissions with any type of body
+func NewAdminSetUserPermissionsRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users/%s/permissions", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAdminSetUserRoleRequest calls the generic AdminSetUserRole builder with application/json body
+func NewAdminSetUserRoleRequest(server string, id string, body AdminSetUserRoleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAdminSetUserRoleRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAdminSetUserRoleRequestWithBody generates requests for AdminSetUserRole with any type of body
+func NewAdminSetUserRoleRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users/%s/role", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
 }
 
 // NewGetConsentRequest generates requests for GetConsent
@@ -558,7 +968,7 @@ func NewGetLogoutRequest(server string, params *GetLogoutParams) (*http.Request,
 }
 
 // NewGetMeRequest generates requests for GetMe
-func NewGetMeRequest(server string, params *GetMeParams) (*http.Request, error) {
+func NewGetMeRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -576,24 +986,6 @@ func NewGetMeRequest(server string, params *GetMeParams) (*http.Request, error) 
 		return nil, err
 	}
 
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "user_id", runtime.ParamLocationQuery, params.UserId); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -603,7 +995,7 @@ func NewGetMeRequest(server string, params *GetMeParams) (*http.Request, error) 
 }
 
 // NewDisableTwoFactorRequest generates requests for DisableTwoFactor
-func NewDisableTwoFactorRequest(server string, params *DisableTwoFactorParams) (*http.Request, error) {
+func NewDisableTwoFactorRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -621,24 +1013,6 @@ func NewDisableTwoFactorRequest(server string, params *DisableTwoFactorParams) (
 		return nil, err
 	}
 
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "user_id", runtime.ParamLocationQuery, params.UserId); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -648,7 +1022,7 @@ func NewDisableTwoFactorRequest(server string, params *DisableTwoFactorParams) (
 }
 
 // NewEnableTwoFactorRequest generates requests for EnableTwoFactor
-func NewEnableTwoFactorRequest(server string, params *EnableTwoFactorParams) (*http.Request, error) {
+func NewEnableTwoFactorRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -664,24 +1038,6 @@ func NewEnableTwoFactorRequest(server string, params *EnableTwoFactorParams) (*h
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "user_id", runtime.ParamLocationQuery, params.UserId); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
@@ -737,18 +1093,6 @@ func NewSubmitTwoFactorRequestWithBody(server string, params *SubmitTwoFactorPar
 			}
 		}
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "user_id", runtime.ParamLocationQuery, params.UserId); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -763,18 +1107,18 @@ func NewSubmitTwoFactorRequestWithBody(server string, params *SubmitTwoFactorPar
 }
 
 // NewVerifyTwoFactorRequest calls the generic VerifyTwoFactor builder with application/json body
-func NewVerifyTwoFactorRequest(server string, params *VerifyTwoFactorParams, body VerifyTwoFactorJSONRequestBody) (*http.Request, error) {
+func NewVerifyTwoFactorRequest(server string, body VerifyTwoFactorJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewVerifyTwoFactorRequestWithBody(server, params, "application/json", bodyReader)
+	return NewVerifyTwoFactorRequestWithBody(server, "application/json", bodyReader)
 }
 
 // NewVerifyTwoFactorRequestWithBody generates requests for VerifyTwoFactor with any type of body
-func NewVerifyTwoFactorRequestWithBody(server string, params *VerifyTwoFactorParams, contentType string, body io.Reader) (*http.Request, error) {
+func NewVerifyTwoFactorRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -792,22 +1136,44 @@ func NewVerifyTwoFactorRequestWithBody(server string, params *VerifyTwoFactorPar
 		return nil, err
 	}
 
-	if params != nil {
-		queryValues := queryURL.Query()
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "user_id", runtime.ParamLocationQuery, params.UserId); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
+	req.Header.Add("Content-Type", contentType)
 
-		queryURL.RawQuery = queryValues.Encode()
+	return req, nil
+}
+
+// NewDCRRegisterRequest calls the generic DCRRegister builder with application/json body
+func NewDCRRegisterRequest(server string, body DCRRegisterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDCRRegisterRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewDCRRegisterRequestWithBody generates requests for DCRRegister with any type of body
+func NewDCRRegisterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/oauth2/register")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
@@ -863,6 +1229,28 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// AdminListUsersWithResponse request
+	AdminListUsersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListUsersResponse, error)
+
+	// AdminGetUserWithResponse request
+	AdminGetUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminGetUserResponse, error)
+
+	// AdminActivateUserWithResponse request
+	AdminActivateUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminActivateUserResponse, error)
+
+	// AdminDeactivateUserWithResponse request
+	AdminDeactivateUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeactivateUserResponse, error)
+
+	// AdminSetUserPermissionsWithBodyWithResponse request with any body
+	AdminSetUserPermissionsWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminSetUserPermissionsResponse, error)
+
+	AdminSetUserPermissionsWithResponse(ctx context.Context, id string, body AdminSetUserPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminSetUserPermissionsResponse, error)
+
+	// AdminSetUserRoleWithBodyWithResponse request with any body
+	AdminSetUserRoleWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminSetUserRoleResponse, error)
+
+	AdminSetUserRoleWithResponse(ctx context.Context, id string, body AdminSetUserRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminSetUserRoleResponse, error)
+
 	// GetConsentWithResponse request
 	GetConsentWithResponse(ctx context.Context, params *GetConsentParams, reqEditors ...RequestEditorFn) (*GetConsentResponse, error)
 
@@ -878,13 +1266,13 @@ type ClientWithResponsesInterface interface {
 	GetLogoutWithResponse(ctx context.Context, params *GetLogoutParams, reqEditors ...RequestEditorFn) (*GetLogoutResponse, error)
 
 	// GetMeWithResponse request
-	GetMeWithResponse(ctx context.Context, params *GetMeParams, reqEditors ...RequestEditorFn) (*GetMeResponse, error)
+	GetMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMeResponse, error)
 
 	// DisableTwoFactorWithResponse request
-	DisableTwoFactorWithResponse(ctx context.Context, params *DisableTwoFactorParams, reqEditors ...RequestEditorFn) (*DisableTwoFactorResponse, error)
+	DisableTwoFactorWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DisableTwoFactorResponse, error)
 
 	// EnableTwoFactorWithResponse request
-	EnableTwoFactorWithResponse(ctx context.Context, params *EnableTwoFactorParams, reqEditors ...RequestEditorFn) (*EnableTwoFactorResponse, error)
+	EnableTwoFactorWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*EnableTwoFactorResponse, error)
 
 	// SubmitTwoFactorWithBodyWithResponse request with any body
 	SubmitTwoFactorWithBodyWithResponse(ctx context.Context, params *SubmitTwoFactorParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitTwoFactorResponse, error)
@@ -892,9 +1280,163 @@ type ClientWithResponsesInterface interface {
 	SubmitTwoFactorWithResponse(ctx context.Context, params *SubmitTwoFactorParams, body SubmitTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*SubmitTwoFactorResponse, error)
 
 	// VerifyTwoFactorWithBodyWithResponse request with any body
-	VerifyTwoFactorWithBodyWithResponse(ctx context.Context, params *VerifyTwoFactorParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VerifyTwoFactorResponse, error)
+	VerifyTwoFactorWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VerifyTwoFactorResponse, error)
 
-	VerifyTwoFactorWithResponse(ctx context.Context, params *VerifyTwoFactorParams, body VerifyTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*VerifyTwoFactorResponse, error)
+	VerifyTwoFactorWithResponse(ctx context.Context, body VerifyTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*VerifyTwoFactorResponse, error)
+
+	// DCRRegisterWithBodyWithResponse request with any body
+	DCRRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DCRRegisterResponse, error)
+
+	DCRRegisterWithResponse(ctx context.Context, body DCRRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*DCRRegisterResponse, error)
+}
+
+type AdminListUsersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON403      *map[string]interface{}
+	JSON500      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminListUsersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminListUsersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminGetUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsUser
+	JSON401      *map[string]interface{}
+	JSON403      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminGetUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminGetUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminActivateUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsUser
+	JSON401      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminActivateUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminActivateUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminDeactivateUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsUser
+	JSON400      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminDeactivateUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminDeactivateUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminSetUserPermissionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsUser
+	JSON400      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminSetUserPermissionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminSetUserPermissionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminSetUserRoleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsUser
+	JSON400      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminSetUserRoleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminSetUserRoleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetConsentResponse struct {
@@ -1115,6 +1657,100 @@ func (r VerifyTwoFactorResponse) StatusCode() int {
 	return 0
 }
 
+type DCRRegisterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ModelsDCRRegisterResponseDto
+	JSON400      *ModelsDCRError
+	JSON429      *ModelsDCRError
+}
+
+// Status returns HTTPResponse.Status
+func (r DCRRegisterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DCRRegisterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// AdminListUsersWithResponse request returning *AdminListUsersResponse
+func (c *ClientWithResponses) AdminListUsersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListUsersResponse, error) {
+	rsp, err := c.AdminListUsers(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminListUsersResponse(rsp)
+}
+
+// AdminGetUserWithResponse request returning *AdminGetUserResponse
+func (c *ClientWithResponses) AdminGetUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminGetUserResponse, error) {
+	rsp, err := c.AdminGetUser(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminGetUserResponse(rsp)
+}
+
+// AdminActivateUserWithResponse request returning *AdminActivateUserResponse
+func (c *ClientWithResponses) AdminActivateUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminActivateUserResponse, error) {
+	rsp, err := c.AdminActivateUser(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminActivateUserResponse(rsp)
+}
+
+// AdminDeactivateUserWithResponse request returning *AdminDeactivateUserResponse
+func (c *ClientWithResponses) AdminDeactivateUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeactivateUserResponse, error) {
+	rsp, err := c.AdminDeactivateUser(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminDeactivateUserResponse(rsp)
+}
+
+// AdminSetUserPermissionsWithBodyWithResponse request with arbitrary body returning *AdminSetUserPermissionsResponse
+func (c *ClientWithResponses) AdminSetUserPermissionsWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminSetUserPermissionsResponse, error) {
+	rsp, err := c.AdminSetUserPermissionsWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminSetUserPermissionsResponse(rsp)
+}
+
+func (c *ClientWithResponses) AdminSetUserPermissionsWithResponse(ctx context.Context, id string, body AdminSetUserPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminSetUserPermissionsResponse, error) {
+	rsp, err := c.AdminSetUserPermissions(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminSetUserPermissionsResponse(rsp)
+}
+
+// AdminSetUserRoleWithBodyWithResponse request with arbitrary body returning *AdminSetUserRoleResponse
+func (c *ClientWithResponses) AdminSetUserRoleWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminSetUserRoleResponse, error) {
+	rsp, err := c.AdminSetUserRoleWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminSetUserRoleResponse(rsp)
+}
+
+func (c *ClientWithResponses) AdminSetUserRoleWithResponse(ctx context.Context, id string, body AdminSetUserRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminSetUserRoleResponse, error) {
+	rsp, err := c.AdminSetUserRole(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminSetUserRoleResponse(rsp)
+}
+
 // GetConsentWithResponse request returning *GetConsentResponse
 func (c *ClientWithResponses) GetConsentWithResponse(ctx context.Context, params *GetConsentParams, reqEditors ...RequestEditorFn) (*GetConsentResponse, error) {
 	rsp, err := c.GetConsent(ctx, params, reqEditors...)
@@ -1160,8 +1796,8 @@ func (c *ClientWithResponses) GetLogoutWithResponse(ctx context.Context, params 
 }
 
 // GetMeWithResponse request returning *GetMeResponse
-func (c *ClientWithResponses) GetMeWithResponse(ctx context.Context, params *GetMeParams, reqEditors ...RequestEditorFn) (*GetMeResponse, error) {
-	rsp, err := c.GetMe(ctx, params, reqEditors...)
+func (c *ClientWithResponses) GetMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMeResponse, error) {
+	rsp, err := c.GetMe(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -1169,8 +1805,8 @@ func (c *ClientWithResponses) GetMeWithResponse(ctx context.Context, params *Get
 }
 
 // DisableTwoFactorWithResponse request returning *DisableTwoFactorResponse
-func (c *ClientWithResponses) DisableTwoFactorWithResponse(ctx context.Context, params *DisableTwoFactorParams, reqEditors ...RequestEditorFn) (*DisableTwoFactorResponse, error) {
-	rsp, err := c.DisableTwoFactor(ctx, params, reqEditors...)
+func (c *ClientWithResponses) DisableTwoFactorWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DisableTwoFactorResponse, error) {
+	rsp, err := c.DisableTwoFactor(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -1178,8 +1814,8 @@ func (c *ClientWithResponses) DisableTwoFactorWithResponse(ctx context.Context, 
 }
 
 // EnableTwoFactorWithResponse request returning *EnableTwoFactorResponse
-func (c *ClientWithResponses) EnableTwoFactorWithResponse(ctx context.Context, params *EnableTwoFactorParams, reqEditors ...RequestEditorFn) (*EnableTwoFactorResponse, error) {
-	rsp, err := c.EnableTwoFactor(ctx, params, reqEditors...)
+func (c *ClientWithResponses) EnableTwoFactorWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*EnableTwoFactorResponse, error) {
+	rsp, err := c.EnableTwoFactor(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -1204,20 +1840,312 @@ func (c *ClientWithResponses) SubmitTwoFactorWithResponse(ctx context.Context, p
 }
 
 // VerifyTwoFactorWithBodyWithResponse request with arbitrary body returning *VerifyTwoFactorResponse
-func (c *ClientWithResponses) VerifyTwoFactorWithBodyWithResponse(ctx context.Context, params *VerifyTwoFactorParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VerifyTwoFactorResponse, error) {
-	rsp, err := c.VerifyTwoFactorWithBody(ctx, params, contentType, body, reqEditors...)
+func (c *ClientWithResponses) VerifyTwoFactorWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VerifyTwoFactorResponse, error) {
+	rsp, err := c.VerifyTwoFactorWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseVerifyTwoFactorResponse(rsp)
 }
 
-func (c *ClientWithResponses) VerifyTwoFactorWithResponse(ctx context.Context, params *VerifyTwoFactorParams, body VerifyTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*VerifyTwoFactorResponse, error) {
-	rsp, err := c.VerifyTwoFactor(ctx, params, body, reqEditors...)
+func (c *ClientWithResponses) VerifyTwoFactorWithResponse(ctx context.Context, body VerifyTwoFactorJSONRequestBody, reqEditors ...RequestEditorFn) (*VerifyTwoFactorResponse, error) {
+	rsp, err := c.VerifyTwoFactor(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseVerifyTwoFactorResponse(rsp)
+}
+
+// DCRRegisterWithBodyWithResponse request with arbitrary body returning *DCRRegisterResponse
+func (c *ClientWithResponses) DCRRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DCRRegisterResponse, error) {
+	rsp, err := c.DCRRegisterWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDCRRegisterResponse(rsp)
+}
+
+func (c *ClientWithResponses) DCRRegisterWithResponse(ctx context.Context, body DCRRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*DCRRegisterResponse, error) {
+	rsp, err := c.DCRRegister(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDCRRegisterResponse(rsp)
+}
+
+// ParseAdminListUsersResponse parses an HTTP response from a AdminListUsersWithResponse call
+func ParseAdminListUsersResponse(rsp *http.Response) (*AdminListUsersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminListUsersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminGetUserResponse parses an HTTP response from a AdminGetUserWithResponse call
+func ParseAdminGetUserResponse(rsp *http.Response) (*AdminGetUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminGetUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsUser
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminActivateUserResponse parses an HTTP response from a AdminActivateUserWithResponse call
+func ParseAdminActivateUserResponse(rsp *http.Response) (*AdminActivateUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminActivateUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsUser
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminDeactivateUserResponse parses an HTTP response from a AdminDeactivateUserWithResponse call
+func ParseAdminDeactivateUserResponse(rsp *http.Response) (*AdminDeactivateUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminDeactivateUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsUser
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminSetUserPermissionsResponse parses an HTTP response from a AdminSetUserPermissionsWithResponse call
+func ParseAdminSetUserPermissionsResponse(rsp *http.Response) (*AdminSetUserPermissionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminSetUserPermissionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsUser
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminSetUserRoleResponse parses an HTTP response from a AdminSetUserRoleWithResponse call
+func ParseAdminSetUserRoleResponse(rsp *http.Response) (*AdminSetUserRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminSetUserRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsUser
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetConsentResponse parses an HTTP response from a GetConsentWithResponse call
@@ -1585,6 +2513,46 @@ func ParseVerifyTwoFactorResponse(rsp *http.Response) (*VerifyTwoFactorResponse,
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDCRRegisterResponse parses an HTTP response from a DCRRegisterWithResponse call
+func ParseDCRRegisterResponse(rsp *http.Response) (*DCRRegisterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DCRRegisterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ModelsDCRRegisterResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ModelsDCRError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ModelsDCRError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
