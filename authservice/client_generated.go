@@ -20,6 +20,12 @@ const (
 	ApiKeyAuthScopes = "ApiKeyAuth.Scopes"
 )
 
+// ModelsAdminCreateTenantRequest defines model for models.AdminCreateTenantRequest.
+type ModelsAdminCreateTenantRequest struct {
+	DisplayName *string `json:"displayName,omitempty"`
+	Name        string  `json:"name"`
+}
+
 // ModelsAdminSetPermissionsRequest defines model for models.AdminSetPermissionsRequest.
 type ModelsAdminSetPermissionsRequest struct {
 	Permissions *[]string `json:"permissions,omitempty"`
@@ -80,6 +86,15 @@ type ModelsLoginRequest struct {
 	Password string `json:"password"`
 }
 
+// ModelsTenant defines model for models.Tenant.
+type ModelsTenant struct {
+	CreatedAt   *string `json:"createdAt,omitempty"`
+	DisplayName *string `json:"displayName,omitempty"`
+	Id          *string `json:"id,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	UpdatedAt   *string `json:"updatedAt,omitempty"`
+}
+
 // ModelsTwoFactorEnableResponseDto defines model for models.TwoFactorEnableResponseDto.
 type ModelsTwoFactorEnableResponseDto struct {
 	QrCodeUrl     *string   `json:"qrCodeUrl,omitempty"`
@@ -134,6 +149,9 @@ type SubmitTwoFactorParams struct {
 	// LoginChallenge Hydra login challenge
 	LoginChallenge string `form:"login_challenge" json:"login_challenge"`
 }
+
+// AdminCreateTenantJSONRequestBody defines body for AdminCreateTenant for application/json ContentType.
+type AdminCreateTenantJSONRequestBody = ModelsAdminCreateTenantRequest
 
 // AdminSetUserPermissionsJSONRequestBody defines body for AdminSetUserPermissions for application/json ContentType.
 type AdminSetUserPermissionsJSONRequestBody = ModelsAdminSetPermissionsRequest
@@ -226,6 +244,17 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// AdminListTenants request
+	AdminListTenants(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminCreateTenantWithBody request with any body
+	AdminCreateTenantWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AdminCreateTenant(ctx context.Context, body AdminCreateTenantJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminGetTenant request
+	AdminGetTenant(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AdminListUsers request
 	AdminListUsers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -285,6 +314,54 @@ type ClientInterface interface {
 	DCRRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	DCRRegister(ctx context.Context, body DCRRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) AdminListTenants(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminListTenantsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminCreateTenantWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminCreateTenantRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminCreateTenant(ctx context.Context, body AdminCreateTenantJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminCreateTenantRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminGetTenant(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminGetTenantRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) AdminListUsers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -549,6 +626,107 @@ func (c *Client) DCRRegister(ctx context.Context, body DCRRegisterJSONRequestBod
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewAdminListTenantsRequest generates requests for AdminListTenants
+func NewAdminListTenantsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/tenants")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminCreateTenantRequest calls the generic AdminCreateTenant builder with application/json body
+func NewAdminCreateTenantRequest(server string, body AdminCreateTenantJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAdminCreateTenantRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAdminCreateTenantRequestWithBody generates requests for AdminCreateTenant with any type of body
+func NewAdminCreateTenantRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/tenants")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAdminGetTenantRequest generates requests for AdminGetTenant
+func NewAdminGetTenantRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/tenants/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewAdminListUsersRequest generates requests for AdminListUsers
@@ -1229,6 +1407,17 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// AdminListTenantsWithResponse request
+	AdminListTenantsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListTenantsResponse, error)
+
+	// AdminCreateTenantWithBodyWithResponse request with any body
+	AdminCreateTenantWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminCreateTenantResponse, error)
+
+	AdminCreateTenantWithResponse(ctx context.Context, body AdminCreateTenantJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminCreateTenantResponse, error)
+
+	// AdminGetTenantWithResponse request
+	AdminGetTenantWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminGetTenantResponse, error)
+
 	// AdminListUsersWithResponse request
 	AdminListUsersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListUsersResponse, error)
 
@@ -1288,6 +1477,81 @@ type ClientWithResponsesInterface interface {
 	DCRRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DCRRegisterResponse, error)
 
 	DCRRegisterWithResponse(ctx context.Context, body DCRRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*DCRRegisterResponse, error)
+}
+
+type AdminListTenantsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON403      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminListTenantsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminListTenantsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminCreateTenantResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ModelsTenant
+	JSON400      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON403      *map[string]interface{}
+	JSON409      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminCreateTenantResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminCreateTenantResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminGetTenantResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ModelsTenant
+	JSON401      *map[string]interface{}
+	JSON403      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminGetTenantResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminGetTenantResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type AdminListUsersResponse struct {
@@ -1681,6 +1945,41 @@ func (r DCRRegisterResponse) StatusCode() int {
 	return 0
 }
 
+// AdminListTenantsWithResponse request returning *AdminListTenantsResponse
+func (c *ClientWithResponses) AdminListTenantsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListTenantsResponse, error) {
+	rsp, err := c.AdminListTenants(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminListTenantsResponse(rsp)
+}
+
+// AdminCreateTenantWithBodyWithResponse request with arbitrary body returning *AdminCreateTenantResponse
+func (c *ClientWithResponses) AdminCreateTenantWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminCreateTenantResponse, error) {
+	rsp, err := c.AdminCreateTenantWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminCreateTenantResponse(rsp)
+}
+
+func (c *ClientWithResponses) AdminCreateTenantWithResponse(ctx context.Context, body AdminCreateTenantJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminCreateTenantResponse, error) {
+	rsp, err := c.AdminCreateTenant(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminCreateTenantResponse(rsp)
+}
+
+// AdminGetTenantWithResponse request returning *AdminGetTenantResponse
+func (c *ClientWithResponses) AdminGetTenantWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminGetTenantResponse, error) {
+	rsp, err := c.AdminGetTenant(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminGetTenantResponse(rsp)
+}
+
 // AdminListUsersWithResponse request returning *AdminListUsersResponse
 func (c *ClientWithResponses) AdminListUsersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListUsersResponse, error) {
 	rsp, err := c.AdminListUsers(ctx, reqEditors...)
@@ -1871,6 +2170,147 @@ func (c *ClientWithResponses) DCRRegisterWithResponse(ctx context.Context, body 
 		return nil, err
 	}
 	return ParseDCRRegisterResponse(rsp)
+}
+
+// ParseAdminListTenantsResponse parses an HTTP response from a AdminListTenantsWithResponse call
+func ParseAdminListTenantsResponse(rsp *http.Response) (*AdminListTenantsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminListTenantsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminCreateTenantResponse parses an HTTP response from a AdminCreateTenantWithResponse call
+func ParseAdminCreateTenantResponse(rsp *http.Response) (*AdminCreateTenantResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminCreateTenantResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ModelsTenant
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminGetTenantResponse parses an HTTP response from a AdminGetTenantWithResponse call
+func ParseAdminGetTenantResponse(rsp *http.Response) (*AdminGetTenantResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminGetTenantResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ModelsTenant
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseAdminListUsersResponse parses an HTTP response from a AdminListUsersWithResponse call
