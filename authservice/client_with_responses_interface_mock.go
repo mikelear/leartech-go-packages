@@ -51,6 +51,80 @@ func (_m *MockClientWithResponsesInterface) AdminActivateUserWithResponse(ctx co
 	return r0, r1
 }
 
+// AdminCreateTenantWithBodyWithResponse provides a mock function with given fields: ctx, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminCreateTenantWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminCreateTenantResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminCreateTenantWithBodyWithResponse")
+	}
+
+	var r0 *AdminCreateTenantResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*AdminCreateTenantResponse, error)); ok {
+		return rf(ctx, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *AdminCreateTenantResponse); ok {
+		r0 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminCreateTenantResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminCreateTenantWithResponse provides a mock function with given fields: ctx, body, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminCreateTenantWithResponse(ctx context.Context, body ModelsAdminCreateTenantRequest, reqEditors ...RequestEditorFn) (*AdminCreateTenantResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminCreateTenantWithResponse")
+	}
+
+	var r0 *AdminCreateTenantResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ModelsAdminCreateTenantRequest, ...RequestEditorFn) (*AdminCreateTenantResponse, error)); ok {
+		return rf(ctx, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ModelsAdminCreateTenantRequest, ...RequestEditorFn) *AdminCreateTenantResponse); ok {
+		r0 = rf(ctx, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminCreateTenantResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ModelsAdminCreateTenantRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // AdminDeactivateUserWithResponse provides a mock function with given fields: ctx, id, reqEditors
 func (_m *MockClientWithResponsesInterface) AdminDeactivateUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeactivateUserResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
@@ -76,6 +150,43 @@ func (_m *MockClientWithResponsesInterface) AdminDeactivateUserWithResponse(ctx 
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*AdminDeactivateUserResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminGetTenantWithResponse provides a mock function with given fields: ctx, id, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminGetTenantWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminGetTenantResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminGetTenantWithResponse")
+	}
+
+	var r0 *AdminGetTenantResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*AdminGetTenantResponse, error)); ok {
+		return rf(ctx, id, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *AdminGetTenantResponse); ok {
+		r0 = rf(ctx, id, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminGetTenantResponse)
 		}
 	}
 
@@ -118,6 +229,43 @@ func (_m *MockClientWithResponsesInterface) AdminGetUserWithResponse(ctx context
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminListTenantsWithResponse provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminListTenantsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListTenantsResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminListTenantsWithResponse")
+	}
+
+	var r0 *AdminListTenantsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*AdminListTenantsResponse, error)); ok {
+		return rf(ctx, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *AdminListTenantsResponse); ok {
+		r0 = rf(ctx, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminListTenantsResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
