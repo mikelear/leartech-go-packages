@@ -54,7 +54,7 @@ func (_m *MockClientInterface) AdminActivateUser(ctx context.Context, id string,
 }
 
 // AdminCreateTenant provides a mock function with given fields: ctx, body, reqEditors
-func (_m *MockClientInterface) AdminCreateTenant(ctx context.Context, body ModelsAdminCreateTenantRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (_m *MockClientInterface) AdminCreateTenant(ctx context.Context, body GithubComMikelearLeartechAuthServiceInternalModelsAdminCreateTenantRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -70,10 +70,10 @@ func (_m *MockClientInterface) AdminCreateTenant(ctx context.Context, body Model
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ModelsAdminCreateTenantRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, GithubComMikelearLeartechAuthServiceInternalModelsAdminCreateTenantRequest, ...RequestEditorFn) (*http.Response, error)); ok {
 		return rf(ctx, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ModelsAdminCreateTenantRequest, ...RequestEditorFn) *http.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, GithubComMikelearLeartechAuthServiceInternalModelsAdminCreateTenantRequest, ...RequestEditorFn) *http.Response); ok {
 		r0 = rf(ctx, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
@@ -81,7 +81,7 @@ func (_m *MockClientInterface) AdminCreateTenant(ctx context.Context, body Model
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ModelsAdminCreateTenantRequest, ...RequestEditorFn) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, GithubComMikelearLeartechAuthServiceInternalModelsAdminCreateTenantRequest, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
@@ -140,6 +140,43 @@ func (_m *MockClientInterface) AdminDeactivateUser(ctx context.Context, id strin
 
 	if len(ret) == 0 {
 		panic("no return value specified for AdminDeactivateUser")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, id, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, id, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminDeleteTenant provides a mock function with given fields: ctx, id, reqEditors
+func (_m *MockClientInterface) AdminDeleteTenant(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminDeleteTenant")
 	}
 
 	var r0 *http.Response
@@ -313,7 +350,7 @@ func (_m *MockClientInterface) AdminListUsers(ctx context.Context, reqEditors ..
 }
 
 // AdminSetUserPermissions provides a mock function with given fields: ctx, id, body, reqEditors
-func (_m *MockClientInterface) AdminSetUserPermissions(ctx context.Context, id string, body ModelsAdminSetPermissionsRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (_m *MockClientInterface) AdminSetUserPermissions(ctx context.Context, id string, body GithubComMikelearLeartechAuthServiceInternalModelsAdminSetPermissionsRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -329,10 +366,10 @@ func (_m *MockClientInterface) AdminSetUserPermissions(ctx context.Context, id s
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, ModelsAdminSetPermissionsRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, GithubComMikelearLeartechAuthServiceInternalModelsAdminSetPermissionsRequest, ...RequestEditorFn) (*http.Response, error)); ok {
 		return rf(ctx, id, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, ModelsAdminSetPermissionsRequest, ...RequestEditorFn) *http.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, GithubComMikelearLeartechAuthServiceInternalModelsAdminSetPermissionsRequest, ...RequestEditorFn) *http.Response); ok {
 		r0 = rf(ctx, id, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
@@ -340,7 +377,7 @@ func (_m *MockClientInterface) AdminSetUserPermissions(ctx context.Context, id s
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, ModelsAdminSetPermissionsRequest, ...RequestEditorFn) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, GithubComMikelearLeartechAuthServiceInternalModelsAdminSetPermissionsRequest, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, id, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
@@ -387,7 +424,7 @@ func (_m *MockClientInterface) AdminSetUserPermissionsWithBody(ctx context.Conte
 }
 
 // AdminSetUserRole provides a mock function with given fields: ctx, id, body, reqEditors
-func (_m *MockClientInterface) AdminSetUserRole(ctx context.Context, id string, body ModelsAdminSetRoleRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (_m *MockClientInterface) AdminSetUserRole(ctx context.Context, id string, body GithubComMikelearLeartechAuthServiceInternalModelsAdminSetRoleRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -403,10 +440,10 @@ func (_m *MockClientInterface) AdminSetUserRole(ctx context.Context, id string, 
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, ModelsAdminSetRoleRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, GithubComMikelearLeartechAuthServiceInternalModelsAdminSetRoleRequest, ...RequestEditorFn) (*http.Response, error)); ok {
 		return rf(ctx, id, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, ModelsAdminSetRoleRequest, ...RequestEditorFn) *http.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, GithubComMikelearLeartechAuthServiceInternalModelsAdminSetRoleRequest, ...RequestEditorFn) *http.Response); ok {
 		r0 = rf(ctx, id, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
@@ -414,7 +451,7 @@ func (_m *MockClientInterface) AdminSetUserRole(ctx context.Context, id string, 
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, ModelsAdminSetRoleRequest, ...RequestEditorFn) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, GithubComMikelearLeartechAuthServiceInternalModelsAdminSetRoleRequest, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, id, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
@@ -461,7 +498,7 @@ func (_m *MockClientInterface) AdminSetUserRoleWithBody(ctx context.Context, id 
 }
 
 // DCRRegister provides a mock function with given fields: ctx, body, reqEditors
-func (_m *MockClientInterface) DCRRegister(ctx context.Context, body ModelsDCRRegisterRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (_m *MockClientInterface) DCRRegister(ctx context.Context, body GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -477,10 +514,10 @@ func (_m *MockClientInterface) DCRRegister(ctx context.Context, body ModelsDCRRe
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ModelsDCRRegisterRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterRequest, ...RequestEditorFn) (*http.Response, error)); ok {
 		return rf(ctx, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ModelsDCRRegisterRequest, ...RequestEditorFn) *http.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterRequest, ...RequestEditorFn) *http.Response); ok {
 		r0 = rf(ctx, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
@@ -488,7 +525,7 @@ func (_m *MockClientInterface) DCRRegister(ctx context.Context, body ModelsDCRRe
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ModelsDCRRegisterRequest, ...RequestEditorFn) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterRequest, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
@@ -757,7 +794,7 @@ func (_m *MockClientInterface) GetMe(ctx context.Context, reqEditors ...RequestE
 }
 
 // PostLogin provides a mock function with given fields: ctx, params, body, reqEditors
-func (_m *MockClientInterface) PostLogin(ctx context.Context, params *PostLoginParams, body ModelsLoginRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (_m *MockClientInterface) PostLogin(ctx context.Context, params *PostLoginParams, body GithubComMikelearLeartechAuthServiceInternalModelsLoginRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -773,10 +810,10 @@ func (_m *MockClientInterface) PostLogin(ctx context.Context, params *PostLoginP
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *PostLoginParams, ModelsLoginRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *PostLoginParams, GithubComMikelearLeartechAuthServiceInternalModelsLoginRequest, ...RequestEditorFn) (*http.Response, error)); ok {
 		return rf(ctx, params, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *PostLoginParams, ModelsLoginRequest, ...RequestEditorFn) *http.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *PostLoginParams, GithubComMikelearLeartechAuthServiceInternalModelsLoginRequest, ...RequestEditorFn) *http.Response); ok {
 		r0 = rf(ctx, params, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
@@ -784,7 +821,7 @@ func (_m *MockClientInterface) PostLogin(ctx context.Context, params *PostLoginP
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *PostLoginParams, ModelsLoginRequest, ...RequestEditorFn) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *PostLoginParams, GithubComMikelearLeartechAuthServiceInternalModelsLoginRequest, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, params, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
@@ -831,7 +868,7 @@ func (_m *MockClientInterface) PostLoginWithBody(ctx context.Context, params *Po
 }
 
 // SubmitTwoFactor provides a mock function with given fields: ctx, params, body, reqEditors
-func (_m *MockClientInterface) SubmitTwoFactor(ctx context.Context, params *SubmitTwoFactorParams, body ModelsTwoFactorSubmitRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (_m *MockClientInterface) SubmitTwoFactor(ctx context.Context, params *SubmitTwoFactorParams, body GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -847,10 +884,10 @@ func (_m *MockClientInterface) SubmitTwoFactor(ctx context.Context, params *Subm
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *SubmitTwoFactorParams, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *SubmitTwoFactorParams, GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest, ...RequestEditorFn) (*http.Response, error)); ok {
 		return rf(ctx, params, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *SubmitTwoFactorParams, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) *http.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *SubmitTwoFactorParams, GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest, ...RequestEditorFn) *http.Response); ok {
 		r0 = rf(ctx, params, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
@@ -858,7 +895,7 @@ func (_m *MockClientInterface) SubmitTwoFactor(ctx context.Context, params *Subm
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *SubmitTwoFactorParams, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *SubmitTwoFactorParams, GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, params, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
@@ -905,7 +942,7 @@ func (_m *MockClientInterface) SubmitTwoFactorWithBody(ctx context.Context, para
 }
 
 // VerifyTwoFactor provides a mock function with given fields: ctx, body, reqEditors
-func (_m *MockClientInterface) VerifyTwoFactor(ctx context.Context, body ModelsTwoFactorSubmitRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (_m *MockClientInterface) VerifyTwoFactor(ctx context.Context, body GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -921,10 +958,10 @@ func (_m *MockClientInterface) VerifyTwoFactor(ctx context.Context, body ModelsT
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest, ...RequestEditorFn) (*http.Response, error)); ok {
 		return rf(ctx, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) *http.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest, ...RequestEditorFn) *http.Response); ok {
 		r0 = rf(ctx, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
@@ -932,7 +969,7 @@ func (_m *MockClientInterface) VerifyTwoFactor(ctx context.Context, body ModelsT
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ModelsTwoFactorSubmitRequest, ...RequestEditorFn) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
