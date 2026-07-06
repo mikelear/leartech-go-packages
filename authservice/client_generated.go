@@ -20,24 +20,24 @@ const (
 	ApiKeyAuthScopes = "ApiKeyAuth.Scopes"
 )
 
-// ModelsAdminCreateTenantRequest defines model for models.AdminCreateTenantRequest.
-type ModelsAdminCreateTenantRequest struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsAdminCreateTenantRequest defines model for github_com_mikelear_leartech-auth-service_internal_models.AdminCreateTenantRequest.
+type GithubComMikelearLeartechAuthServiceInternalModelsAdminCreateTenantRequest struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	Name        string  `json:"name"`
 }
 
-// ModelsAdminSetPermissionsRequest defines model for models.AdminSetPermissionsRequest.
-type ModelsAdminSetPermissionsRequest struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsAdminSetPermissionsRequest defines model for github_com_mikelear_leartech-auth-service_internal_models.AdminSetPermissionsRequest.
+type GithubComMikelearLeartechAuthServiceInternalModelsAdminSetPermissionsRequest struct {
 	Permissions *[]string `json:"permissions,omitempty"`
 }
 
-// ModelsAdminSetRoleRequest defines model for models.AdminSetRoleRequest.
-type ModelsAdminSetRoleRequest struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsAdminSetRoleRequest defines model for github_com_mikelear_leartech-auth-service_internal_models.AdminSetRoleRequest.
+type GithubComMikelearLeartechAuthServiceInternalModelsAdminSetRoleRequest struct {
 	Role string `json:"role"`
 }
 
-// ModelsAuthResponseDto defines model for models.AuthResponseDto.
-type ModelsAuthResponseDto struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsAuthResponseDto defines model for github_com_mikelear_leartech-auth-service_internal_models.AuthResponseDto.
+type GithubComMikelearLeartechAuthServiceInternalModelsAuthResponseDto struct {
 	DisplayName *string   `json:"displayName,omitempty"`
 	Email       *string   `json:"email,omitempty"`
 	Permissions *[]string `json:"permissions,omitempty"`
@@ -45,14 +45,14 @@ type ModelsAuthResponseDto struct {
 	UserId      *string   `json:"userId,omitempty"`
 }
 
-// ModelsDCRError defines model for models.DCRError.
-type ModelsDCRError struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsDCRError defines model for github_com_mikelear_leartech-auth-service_internal_models.DCRError.
+type GithubComMikelearLeartechAuthServiceInternalModelsDCRError struct {
 	Error            *string `json:"error,omitempty"`
 	ErrorDescription *string `json:"error_description,omitempty"`
 }
 
-// ModelsDCRRegisterRequest defines model for models.DCRRegisterRequest.
-type ModelsDCRRegisterRequest struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterRequest defines model for github_com_mikelear_leartech-auth-service_internal_models.DCRRegisterRequest.
+type GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterRequest struct {
 	ClientName              *string   `json:"client_name,omitempty"`
 	Contacts                *[]string `json:"contacts,omitempty"`
 	GrantTypes              *[]string `json:"grant_types,omitempty"`
@@ -64,8 +64,8 @@ type ModelsDCRRegisterRequest struct {
 	TokenEndpointAuthMethod *string   `json:"token_endpoint_auth_method,omitempty"`
 }
 
-// ModelsDCRRegisterResponseDto defines model for models.DCRRegisterResponseDto.
-type ModelsDCRRegisterResponseDto struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterResponseDto defines model for github_com_mikelear_leartech-auth-service_internal_models.DCRRegisterResponseDto.
+type GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterResponseDto struct {
 	ClientId                *string   `json:"client_id,omitempty"`
 	ClientIdIssuedAt        *int      `json:"client_id_issued_at,omitempty"`
 	ClientName              *string   `json:"client_name,omitempty"`
@@ -80,14 +80,14 @@ type ModelsDCRRegisterResponseDto struct {
 	TokenEndpointAuthMethod *string   `json:"token_endpoint_auth_method,omitempty"`
 }
 
-// ModelsLoginRequest defines model for models.LoginRequest.
-type ModelsLoginRequest struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsLoginRequest defines model for github_com_mikelear_leartech-auth-service_internal_models.LoginRequest.
+type GithubComMikelearLeartechAuthServiceInternalModelsLoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-// ModelsTenant defines model for models.Tenant.
-type ModelsTenant struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsTenant defines model for github_com_mikelear_leartech-auth-service_internal_models.Tenant.
+type GithubComMikelearLeartechAuthServiceInternalModelsTenant struct {
 	CreatedAt   *string `json:"createdAt,omitempty"`
 	DisplayName *string `json:"displayName,omitempty"`
 	Id          *string `json:"id,omitempty"`
@@ -95,20 +95,20 @@ type ModelsTenant struct {
 	UpdatedAt   *string `json:"updatedAt,omitempty"`
 }
 
-// ModelsTwoFactorEnableResponseDto defines model for models.TwoFactorEnableResponseDto.
-type ModelsTwoFactorEnableResponseDto struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorEnableResponseDto defines model for github_com_mikelear_leartech-auth-service_internal_models.TwoFactorEnableResponseDto.
+type GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorEnableResponseDto struct {
 	QrCodeUrl     *string   `json:"qrCodeUrl,omitempty"`
 	RecoveryCodes *[]string `json:"recoveryCodes,omitempty"`
 	Secret        *string   `json:"secret,omitempty"`
 }
 
-// ModelsTwoFactorSubmitRequest defines model for models.TwoFactorSubmitRequest.
-type ModelsTwoFactorSubmitRequest struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest defines model for github_com_mikelear_leartech-auth-service_internal_models.TwoFactorSubmitRequest.
+type GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest struct {
 	Code string `json:"code"`
 }
 
-// ModelsUser defines model for models.User.
-type ModelsUser struct {
+// GithubComMikelearLeartechAuthServiceInternalModelsUser defines model for github_com_mikelear_leartech-auth-service_internal_models.User.
+type GithubComMikelearLeartechAuthServiceInternalModelsUser struct {
 	Active      *bool     `json:"active,omitempty"`
 	CreatedAt   *string   `json:"createdAt,omitempty"`
 	DisplayName *string   `json:"displayName,omitempty"`
@@ -151,25 +151,25 @@ type SubmitTwoFactorParams struct {
 }
 
 // AdminCreateTenantJSONRequestBody defines body for AdminCreateTenant for application/json ContentType.
-type AdminCreateTenantJSONRequestBody = ModelsAdminCreateTenantRequest
+type AdminCreateTenantJSONRequestBody = GithubComMikelearLeartechAuthServiceInternalModelsAdminCreateTenantRequest
 
 // AdminSetUserPermissionsJSONRequestBody defines body for AdminSetUserPermissions for application/json ContentType.
-type AdminSetUserPermissionsJSONRequestBody = ModelsAdminSetPermissionsRequest
+type AdminSetUserPermissionsJSONRequestBody = GithubComMikelearLeartechAuthServiceInternalModelsAdminSetPermissionsRequest
 
 // AdminSetUserRoleJSONRequestBody defines body for AdminSetUserRole for application/json ContentType.
-type AdminSetUserRoleJSONRequestBody = ModelsAdminSetRoleRequest
+type AdminSetUserRoleJSONRequestBody = GithubComMikelearLeartechAuthServiceInternalModelsAdminSetRoleRequest
 
 // PostLoginJSONRequestBody defines body for PostLogin for application/json ContentType.
-type PostLoginJSONRequestBody = ModelsLoginRequest
+type PostLoginJSONRequestBody = GithubComMikelearLeartechAuthServiceInternalModelsLoginRequest
 
 // SubmitTwoFactorJSONRequestBody defines body for SubmitTwoFactor for application/json ContentType.
-type SubmitTwoFactorJSONRequestBody = ModelsTwoFactorSubmitRequest
+type SubmitTwoFactorJSONRequestBody = GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest
 
 // VerifyTwoFactorJSONRequestBody defines body for VerifyTwoFactor for application/json ContentType.
-type VerifyTwoFactorJSONRequestBody = ModelsTwoFactorSubmitRequest
+type VerifyTwoFactorJSONRequestBody = GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorSubmitRequest
 
 // DCRRegisterJSONRequestBody defines body for DCRRegister for application/json ContentType.
-type DCRRegisterJSONRequestBody = ModelsDCRRegisterRequest
+type DCRRegisterJSONRequestBody = GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -251,6 +251,9 @@ type ClientInterface interface {
 	AdminCreateTenantWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	AdminCreateTenant(ctx context.Context, body AdminCreateTenantJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminDeleteTenant request
+	AdminDeleteTenant(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AdminGetTenant request
 	AdminGetTenant(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -342,6 +345,18 @@ func (c *Client) AdminCreateTenantWithBody(ctx context.Context, contentType stri
 
 func (c *Client) AdminCreateTenant(ctx context.Context, body AdminCreateTenantJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAdminCreateTenantRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminDeleteTenant(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminDeleteTenantRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -691,6 +706,40 @@ func NewAdminCreateTenantRequestWithBody(server string, contentType string, body
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAdminDeleteTenantRequest generates requests for AdminDeleteTenant
+func NewAdminDeleteTenantRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/tenants/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -1415,6 +1464,9 @@ type ClientWithResponsesInterface interface {
 
 	AdminCreateTenantWithResponse(ctx context.Context, body AdminCreateTenantJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminCreateTenantResponse, error)
 
+	// AdminDeleteTenantWithResponse request
+	AdminDeleteTenantWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeleteTenantResponse, error)
+
 	// AdminGetTenantWithResponse request
 	AdminGetTenantWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminGetTenantResponse, error)
 
@@ -1506,7 +1558,7 @@ func (r AdminListTenantsResponse) StatusCode() int {
 type AdminCreateTenantResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *ModelsTenant
+	JSON201      *GithubComMikelearLeartechAuthServiceInternalModelsTenant
 	JSON400      *map[string]interface{}
 	JSON401      *map[string]interface{}
 	JSON403      *map[string]interface{}
@@ -1529,10 +1581,35 @@ func (r AdminCreateTenantResponse) StatusCode() int {
 	return 0
 }
 
+type AdminDeleteTenantResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *map[string]interface{}
+	JSON403      *map[string]interface{}
+	JSON404      *map[string]interface{}
+	JSON409      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminDeleteTenantResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminDeleteTenantResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type AdminGetTenantResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ModelsTenant
+	JSON200      *GithubComMikelearLeartechAuthServiceInternalModelsTenant
 	JSON401      *map[string]interface{}
 	JSON403      *map[string]interface{}
 	JSON404      *map[string]interface{}
@@ -1582,7 +1659,7 @@ func (r AdminListUsersResponse) StatusCode() int {
 type AdminGetUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ModelsUser
+	JSON200      *GithubComMikelearLeartechAuthServiceInternalModelsUser
 	JSON401      *map[string]interface{}
 	JSON403      *map[string]interface{}
 	JSON404      *map[string]interface{}
@@ -1607,7 +1684,7 @@ func (r AdminGetUserResponse) StatusCode() int {
 type AdminActivateUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ModelsUser
+	JSON200      *GithubComMikelearLeartechAuthServiceInternalModelsUser
 	JSON401      *map[string]interface{}
 	JSON404      *map[string]interface{}
 }
@@ -1631,7 +1708,7 @@ func (r AdminActivateUserResponse) StatusCode() int {
 type AdminDeactivateUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ModelsUser
+	JSON200      *GithubComMikelearLeartechAuthServiceInternalModelsUser
 	JSON400      *map[string]interface{}
 	JSON401      *map[string]interface{}
 	JSON404      *map[string]interface{}
@@ -1656,7 +1733,7 @@ func (r AdminDeactivateUserResponse) StatusCode() int {
 type AdminSetUserPermissionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ModelsUser
+	JSON200      *GithubComMikelearLeartechAuthServiceInternalModelsUser
 	JSON400      *map[string]interface{}
 	JSON401      *map[string]interface{}
 	JSON404      *map[string]interface{}
@@ -1681,7 +1758,7 @@ func (r AdminSetUserPermissionsResponse) StatusCode() int {
 type AdminSetUserRoleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ModelsUser
+	JSON200      *GithubComMikelearLeartechAuthServiceInternalModelsUser
 	JSON400      *map[string]interface{}
 	JSON401      *map[string]interface{}
 	JSON404      *map[string]interface{}
@@ -1801,7 +1878,7 @@ func (r GetLogoutResponse) StatusCode() int {
 type GetMeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ModelsAuthResponseDto
+	JSON200      *GithubComMikelearLeartechAuthServiceInternalModelsAuthResponseDto
 	JSON400      *map[string]interface{}
 	JSON404      *map[string]interface{}
 }
@@ -1849,7 +1926,7 @@ func (r DisableTwoFactorResponse) StatusCode() int {
 type EnableTwoFactorResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ModelsTwoFactorEnableResponseDto
+	JSON200      *GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorEnableResponseDto
 	JSON400      *map[string]interface{}
 	JSON404      *map[string]interface{}
 	JSON500      *map[string]interface{}
@@ -1924,9 +2001,9 @@ func (r VerifyTwoFactorResponse) StatusCode() int {
 type DCRRegisterResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *ModelsDCRRegisterResponseDto
-	JSON400      *ModelsDCRError
-	JSON429      *ModelsDCRError
+	JSON201      *GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterResponseDto
+	JSON400      *GithubComMikelearLeartechAuthServiceInternalModelsDCRError
+	JSON429      *GithubComMikelearLeartechAuthServiceInternalModelsDCRError
 }
 
 // Status returns HTTPResponse.Status
@@ -1969,6 +2046,15 @@ func (c *ClientWithResponses) AdminCreateTenantWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseAdminCreateTenantResponse(rsp)
+}
+
+// AdminDeleteTenantWithResponse request returning *AdminDeleteTenantResponse
+func (c *ClientWithResponses) AdminDeleteTenantWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeleteTenantResponse, error) {
+	rsp, err := c.AdminDeleteTenant(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminDeleteTenantResponse(rsp)
 }
 
 // AdminGetTenantWithResponse request returning *AdminGetTenantResponse
@@ -2227,7 +2313,7 @@ func ParseAdminCreateTenantResponse(rsp *http.Response) (*AdminCreateTenantRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest ModelsTenant
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsTenant
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2266,6 +2352,53 @@ func ParseAdminCreateTenantResponse(rsp *http.Response) (*AdminCreateTenantRespo
 	return response, nil
 }
 
+// ParseAdminDeleteTenantResponse parses an HTTP response from a AdminDeleteTenantWithResponse call
+func ParseAdminDeleteTenantResponse(rsp *http.Response) (*AdminDeleteTenantResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminDeleteTenantResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAdminGetTenantResponse parses an HTTP response from a AdminGetTenantWithResponse call
 func ParseAdminGetTenantResponse(rsp *http.Response) (*AdminGetTenantResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2281,7 +2414,7 @@ func ParseAdminGetTenantResponse(rsp *http.Response) (*AdminGetTenantResponse, e
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsTenant
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsTenant
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2375,7 +2508,7 @@ func ParseAdminGetUserResponse(rsp *http.Response) (*AdminGetUserResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsUser
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsUser
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2422,7 +2555,7 @@ func ParseAdminActivateUserResponse(rsp *http.Response) (*AdminActivateUserRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsUser
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsUser
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2462,7 +2595,7 @@ func ParseAdminDeactivateUserResponse(rsp *http.Response) (*AdminDeactivateUserR
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsUser
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsUser
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2509,7 +2642,7 @@ func ParseAdminSetUserPermissionsResponse(rsp *http.Response) (*AdminSetUserPerm
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsUser
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsUser
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2556,7 +2689,7 @@ func ParseAdminSetUserRoleResponse(rsp *http.Response) (*AdminSetUserRoleRespons
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsUser
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsUser
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2753,7 +2886,7 @@ func ParseGetMeResponse(rsp *http.Response) (*GetMeResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsAuthResponseDto
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsAuthResponseDto
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2833,7 +2966,7 @@ func ParseEnableTwoFactorResponse(rsp *http.Response) (*EnableTwoFactorResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ModelsTwoFactorEnableResponseDto
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsTwoFactorEnableResponseDto
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2974,21 +3107,21 @@ func ParseDCRRegisterResponse(rsp *http.Response) (*DCRRegisterResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest ModelsDCRRegisterResponseDto
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsDCRRegisterResponseDto
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest ModelsDCRError
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsDCRError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
-		var dest ModelsDCRError
+		var dest GithubComMikelearLeartechAuthServiceInternalModelsDCRError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
