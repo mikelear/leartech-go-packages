@@ -36,21 +36,6 @@ type AdminSetRoleRequest struct {
 	Role string `json:"role"`
 }
 
-// AdminUserResponseDto defines model for AdminUserResponseDto.
-type AdminUserResponseDto struct {
-	Active      *bool     `json:"active,omitempty"`
-	CreatedAt   *string   `json:"createdAt,omitempty"`
-	DisplayName *string   `json:"displayName,omitempty"`
-	Email       *string   `json:"email,omitempty"`
-	Has2FA      *bool     `json:"has2FA,omitempty"`
-	HasPasskey  *bool     `json:"hasPasskey,omitempty"`
-	Id          *string   `json:"id,omitempty"`
-	Permissions *[]string `json:"permissions,omitempty"`
-	Role        *string   `json:"role,omitempty"`
-	TenantId    *string   `json:"tenantId,omitempty"`
-	UpdatedAt   *string   `json:"updatedAt,omitempty"`
-}
-
 // AuthResponseDto defines model for AuthResponseDto.
 type AuthResponseDto struct {
 	DisplayName *string   `json:"displayName,omitempty"`
@@ -1674,7 +1659,7 @@ func (r AdminListUsersResponse) StatusCode() int {
 type AdminGetUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *AdminUserResponseDto
+	JSON200      *User
 	JSON401      *map[string]interface{}
 	JSON403      *map[string]interface{}
 	JSON404      *map[string]interface{}
@@ -2523,7 +2508,7 @@ func ParseAdminGetUserResponse(rsp *http.Response) (*AdminGetUserResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AdminUserResponseDto
+		var dest User
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
