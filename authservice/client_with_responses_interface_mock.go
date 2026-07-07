@@ -125,6 +125,80 @@ func (_m *MockClientWithResponsesInterface) AdminCreateTenantWithResponse(ctx co
 	return r0, r1
 }
 
+// AdminCreateUserWithBodyWithResponse provides a mock function with given fields: ctx, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminCreateUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminCreateUserWithBodyWithResponse")
+	}
+
+	var r0 *AdminCreateUserResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*AdminCreateUserResponse, error)); ok {
+		return rf(ctx, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *AdminCreateUserResponse); ok {
+		r0 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminCreateUserResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminCreateUserWithResponse provides a mock function with given fields: ctx, body, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminCreateUserWithResponse(ctx context.Context, body AdminCreateUserRequest, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminCreateUserWithResponse")
+	}
+
+	var r0 *AdminCreateUserResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, AdminCreateUserRequest, ...RequestEditorFn) (*AdminCreateUserResponse, error)); ok {
+		return rf(ctx, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, AdminCreateUserRequest, ...RequestEditorFn) *AdminCreateUserResponse); ok {
+		r0 = rf(ctx, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminCreateUserResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, AdminCreateUserRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // AdminDeactivateUserWithResponse provides a mock function with given fields: ctx, id, reqEditors
 func (_m *MockClientWithResponsesInterface) AdminDeactivateUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeactivateUserResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
@@ -187,6 +261,43 @@ func (_m *MockClientWithResponsesInterface) AdminDeleteTenantWithResponse(ctx co
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*AdminDeleteTenantResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminDeleteUserWithResponse provides a mock function with given fields: ctx, id, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminDeleteUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeleteUserResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminDeleteUserWithResponse")
+	}
+
+	var r0 *AdminDeleteUserResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*AdminDeleteUserResponse, error)); ok {
+		return rf(ctx, id, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *AdminDeleteUserResponse); ok {
+		r0 = rf(ctx, id, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminDeleteUserResponse)
 		}
 	}
 
@@ -347,6 +458,80 @@ func (_m *MockClientWithResponsesInterface) AdminListUsersWithResponse(ctx conte
 	return r0, r1
 }
 
+// AdminResetPasskeysWithResponse provides a mock function with given fields: ctx, id, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminResetPasskeysWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminResetPasskeysResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminResetPasskeysWithResponse")
+	}
+
+	var r0 *AdminResetPasskeysResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*AdminResetPasskeysResponse, error)); ok {
+		return rf(ctx, id, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *AdminResetPasskeysResponse); ok {
+		r0 = rf(ctx, id, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminResetPasskeysResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminResetTwoFactorWithResponse provides a mock function with given fields: ctx, id, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminResetTwoFactorWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminResetTwoFactorResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminResetTwoFactorWithResponse")
+	}
+
+	var r0 *AdminResetTwoFactorResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*AdminResetTwoFactorResponse, error)); ok {
+		return rf(ctx, id, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *AdminResetTwoFactorResponse); ok {
+		r0 = rf(ctx, id, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminResetTwoFactorResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // AdminSetUserPermissionsWithBodyWithResponse provides a mock function with given fields: ctx, id, contentType, body, reqEditors
 func (_m *MockClientWithResponsesInterface) AdminSetUserPermissionsWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminSetUserPermissionsResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
@@ -487,6 +672,80 @@ func (_m *MockClientWithResponsesInterface) AdminSetUserRoleWithResponse(ctx con
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, AdminSetRoleRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminUpdateUserWithBodyWithResponse provides a mock function with given fields: ctx, id, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminUpdateUserWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminUpdateUserWithBodyWithResponse")
+	}
+
+	var r0 *AdminUpdateUserResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*AdminUpdateUserResponse, error)); ok {
+		return rf(ctx, id, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *AdminUpdateUserResponse); ok {
+		r0 = rf(ctx, id, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminUpdateUserResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AdminUpdateUserWithResponse provides a mock function with given fields: ctx, id, body, reqEditors
+func (_m *MockClientWithResponsesInterface) AdminUpdateUserWithResponse(ctx context.Context, id string, body AdminUpdateUserRequest, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdminUpdateUserWithResponse")
+	}
+
+	var r0 *AdminUpdateUserResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, AdminUpdateUserRequest, ...RequestEditorFn) (*AdminUpdateUserResponse, error)); ok {
+		return rf(ctx, id, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, AdminUpdateUserRequest, ...RequestEditorFn) *AdminUpdateUserResponse); ok {
+		r0 = rf(ctx, id, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*AdminUpdateUserResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, AdminUpdateUserRequest, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, id, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)

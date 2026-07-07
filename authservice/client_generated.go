@@ -26,6 +26,14 @@ type AdminCreateTenantRequest struct {
 	Name        string  `json:"name"`
 }
 
+// AdminCreateUserRequest defines model for AdminCreateUserRequest.
+type AdminCreateUserRequest struct {
+	DisplayName *string   `json:"displayName,omitempty"`
+	Email       string    `json:"email"`
+	Permissions *[]string `json:"permissions,omitempty"`
+	Role        *string   `json:"role,omitempty"`
+}
+
 // AdminSetPermissionsRequest defines model for AdminSetPermissionsRequest.
 type AdminSetPermissionsRequest struct {
 	Permissions *[]string `json:"permissions,omitempty"`
@@ -34,6 +42,26 @@ type AdminSetPermissionsRequest struct {
 // AdminSetRoleRequest defines model for AdminSetRoleRequest.
 type AdminSetRoleRequest struct {
 	Role string `json:"role"`
+}
+
+// AdminUpdateUserRequest defines model for AdminUpdateUserRequest.
+type AdminUpdateUserRequest struct {
+	DisplayName *string `json:"displayName,omitempty"`
+}
+
+// AdminUserResponseDto defines model for AdminUserResponseDto.
+type AdminUserResponseDto struct {
+	Active      *bool     `json:"active,omitempty"`
+	CreatedAt   *string   `json:"createdAt,omitempty"`
+	DisplayName *string   `json:"displayName,omitempty"`
+	Email       *string   `json:"email,omitempty"`
+	Has2FA      *bool     `json:"has2FA,omitempty"`
+	HasPasskey  *bool     `json:"hasPasskey,omitempty"`
+	Id          *string   `json:"id,omitempty"`
+	Permissions *[]string `json:"permissions,omitempty"`
+	Role        *string   `json:"role,omitempty"`
+	TenantId    *string   `json:"tenantId,omitempty"`
+	UpdatedAt   *string   `json:"updatedAt,omitempty"`
 }
 
 // AuthResponseDto defines model for AuthResponseDto.
@@ -153,6 +181,12 @@ type SubmitTwoFactorParams struct {
 // AdminCreateTenantJSONRequestBody defines body for AdminCreateTenant for application/json ContentType.
 type AdminCreateTenantJSONRequestBody = AdminCreateTenantRequest
 
+// AdminCreateUserJSONRequestBody defines body for AdminCreateUser for application/json ContentType.
+type AdminCreateUserJSONRequestBody = AdminCreateUserRequest
+
+// AdminUpdateUserJSONRequestBody defines body for AdminUpdateUser for application/json ContentType.
+type AdminUpdateUserJSONRequestBody = AdminUpdateUserRequest
+
 // AdminSetUserPermissionsJSONRequestBody defines body for AdminSetUserPermissions for application/json ContentType.
 type AdminSetUserPermissionsJSONRequestBody = AdminSetPermissionsRequest
 
@@ -261,14 +295,33 @@ type ClientInterface interface {
 	// AdminListUsers request
 	AdminListUsers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AdminCreateUserWithBody request with any body
+	AdminCreateUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AdminCreateUser(ctx context.Context, body AdminCreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminDeleteUser request
+	AdminDeleteUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AdminGetUser request
 	AdminGetUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminUpdateUserWithBody request with any body
+	AdminUpdateUserWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AdminUpdateUser(ctx context.Context, id string, body AdminUpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminResetTwoFactor request
+	AdminResetTwoFactor(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AdminActivateUser request
 	AdminActivateUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AdminDeactivateUser request
 	AdminDeactivateUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminResetPasskeys request
+	AdminResetPasskeys(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AdminSetUserPermissionsWithBody request with any body
 	AdminSetUserPermissionsWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -391,8 +444,80 @@ func (c *Client) AdminListUsers(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
+func (c *Client) AdminCreateUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminCreateUserRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminCreateUser(ctx context.Context, body AdminCreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminCreateUserRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminDeleteUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminDeleteUserRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) AdminGetUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAdminGetUserRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminUpdateUserWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminUpdateUserRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminUpdateUser(ctx context.Context, id string, body AdminUpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminUpdateUserRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminResetTwoFactor(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminResetTwoFactorRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -417,6 +542,18 @@ func (c *Client) AdminActivateUser(ctx context.Context, id string, reqEditors ..
 
 func (c *Client) AdminDeactivateUser(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAdminDeactivateUserRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminResetPasskeys(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminResetPasskeysRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -805,6 +942,80 @@ func NewAdminListUsersRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewAdminCreateUserRequest calls the generic AdminCreateUser builder with application/json body
+func NewAdminCreateUserRequest(server string, body AdminCreateUserJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAdminCreateUserRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAdminCreateUserRequestWithBody generates requests for AdminCreateUser with any type of body
+func NewAdminCreateUserRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAdminDeleteUserRequest generates requests for AdminDeleteUser
+func NewAdminDeleteUserRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAdminGetUserRequest generates requests for AdminGetUser
 func NewAdminGetUserRequest(server string, id string) (*http.Request, error) {
 	var err error
@@ -832,6 +1043,87 @@ func NewAdminGetUserRequest(server string, id string) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminUpdateUserRequest calls the generic AdminUpdateUser builder with application/json body
+func NewAdminUpdateUserRequest(server string, id string, body AdminUpdateUserJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAdminUpdateUserRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAdminUpdateUserRequestWithBody generates requests for AdminUpdateUser with any type of body
+func NewAdminUpdateUserRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAdminResetTwoFactorRequest generates requests for AdminResetTwoFactor
+func NewAdminResetTwoFactorRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users/%s/2fa/reset", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -890,6 +1182,40 @@ func NewAdminDeactivateUserRequest(server string, id string) (*http.Request, err
 	}
 
 	operationPath := fmt.Sprintf("/api/auth/admin/users/%s/deactivate", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminResetPasskeysRequest generates requests for AdminResetPasskeys
+func NewAdminResetPasskeysRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/admin/users/%s/passkeys/reset", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1473,14 +1799,33 @@ type ClientWithResponsesInterface interface {
 	// AdminListUsersWithResponse request
 	AdminListUsersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListUsersResponse, error)
 
+	// AdminCreateUserWithBodyWithResponse request with any body
+	AdminCreateUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error)
+
+	AdminCreateUserWithResponse(ctx context.Context, body AdminCreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error)
+
+	// AdminDeleteUserWithResponse request
+	AdminDeleteUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeleteUserResponse, error)
+
 	// AdminGetUserWithResponse request
 	AdminGetUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminGetUserResponse, error)
+
+	// AdminUpdateUserWithBodyWithResponse request with any body
+	AdminUpdateUserWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error)
+
+	AdminUpdateUserWithResponse(ctx context.Context, id string, body AdminUpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error)
+
+	// AdminResetTwoFactorWithResponse request
+	AdminResetTwoFactorWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminResetTwoFactorResponse, error)
 
 	// AdminActivateUserWithResponse request
 	AdminActivateUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminActivateUserResponse, error)
 
 	// AdminDeactivateUserWithResponse request
 	AdminDeactivateUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeactivateUserResponse, error)
+
+	// AdminResetPasskeysWithResponse request
+	AdminResetPasskeysWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminResetPasskeysResponse, error)
 
 	// AdminSetUserPermissionsWithBodyWithResponse request with any body
 	AdminSetUserPermissionsWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminSetUserPermissionsResponse, error)
@@ -1656,10 +2001,60 @@ func (r AdminListUsersResponse) StatusCode() int {
 	return 0
 }
 
+type AdminCreateUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *User
+	JSON400      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON403      *map[string]interface{}
+	JSON409      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminCreateUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminCreateUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminDeleteUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminDeleteUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminDeleteUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type AdminGetUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *User
+	JSON200      *AdminUserResponseDto
 	JSON401      *map[string]interface{}
 	JSON403      *map[string]interface{}
 	JSON404      *map[string]interface{}
@@ -1675,6 +2070,54 @@ func (r AdminGetUserResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r AdminGetUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminUpdateUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *User
+	JSON400      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminUpdateUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminUpdateUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminResetTwoFactorResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminResetTwoFactorResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminResetTwoFactorResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1724,6 +2167,30 @@ func (r AdminDeactivateUserResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r AdminDeactivateUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminResetPasskeysResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON401      *map[string]interface{}
+	JSON404      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminResetPasskeysResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminResetPasskeysResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2075,6 +2542,32 @@ func (c *ClientWithResponses) AdminListUsersWithResponse(ctx context.Context, re
 	return ParseAdminListUsersResponse(rsp)
 }
 
+// AdminCreateUserWithBodyWithResponse request with arbitrary body returning *AdminCreateUserResponse
+func (c *ClientWithResponses) AdminCreateUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error) {
+	rsp, err := c.AdminCreateUserWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminCreateUserResponse(rsp)
+}
+
+func (c *ClientWithResponses) AdminCreateUserWithResponse(ctx context.Context, body AdminCreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error) {
+	rsp, err := c.AdminCreateUser(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminCreateUserResponse(rsp)
+}
+
+// AdminDeleteUserWithResponse request returning *AdminDeleteUserResponse
+func (c *ClientWithResponses) AdminDeleteUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminDeleteUserResponse, error) {
+	rsp, err := c.AdminDeleteUser(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminDeleteUserResponse(rsp)
+}
+
 // AdminGetUserWithResponse request returning *AdminGetUserResponse
 func (c *ClientWithResponses) AdminGetUserWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminGetUserResponse, error) {
 	rsp, err := c.AdminGetUser(ctx, id, reqEditors...)
@@ -2082,6 +2575,32 @@ func (c *ClientWithResponses) AdminGetUserWithResponse(ctx context.Context, id s
 		return nil, err
 	}
 	return ParseAdminGetUserResponse(rsp)
+}
+
+// AdminUpdateUserWithBodyWithResponse request with arbitrary body returning *AdminUpdateUserResponse
+func (c *ClientWithResponses) AdminUpdateUserWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error) {
+	rsp, err := c.AdminUpdateUserWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminUpdateUserResponse(rsp)
+}
+
+func (c *ClientWithResponses) AdminUpdateUserWithResponse(ctx context.Context, id string, body AdminUpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error) {
+	rsp, err := c.AdminUpdateUser(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminUpdateUserResponse(rsp)
+}
+
+// AdminResetTwoFactorWithResponse request returning *AdminResetTwoFactorResponse
+func (c *ClientWithResponses) AdminResetTwoFactorWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminResetTwoFactorResponse, error) {
+	rsp, err := c.AdminResetTwoFactor(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminResetTwoFactorResponse(rsp)
 }
 
 // AdminActivateUserWithResponse request returning *AdminActivateUserResponse
@@ -2100,6 +2619,15 @@ func (c *ClientWithResponses) AdminDeactivateUserWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseAdminDeactivateUserResponse(rsp)
+}
+
+// AdminResetPasskeysWithResponse request returning *AdminResetPasskeysResponse
+func (c *ClientWithResponses) AdminResetPasskeysWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AdminResetPasskeysResponse, error) {
+	rsp, err := c.AdminResetPasskeys(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminResetPasskeysResponse(rsp)
 }
 
 // AdminSetUserPermissionsWithBodyWithResponse request with arbitrary body returning *AdminSetUserPermissionsResponse
@@ -2493,6 +3021,100 @@ func ParseAdminListUsersResponse(rsp *http.Response) (*AdminListUsersResponse, e
 	return response, nil
 }
 
+// ParseAdminCreateUserResponse parses an HTTP response from a AdminCreateUserWithResponse call
+func ParseAdminCreateUserResponse(rsp *http.Response) (*AdminCreateUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminCreateUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminDeleteUserResponse parses an HTTP response from a AdminDeleteUserWithResponse call
+func ParseAdminDeleteUserResponse(rsp *http.Response) (*AdminDeleteUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminDeleteUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAdminGetUserResponse parses an HTTP response from a AdminGetUserWithResponse call
 func ParseAdminGetUserResponse(rsp *http.Response) (*AdminGetUserResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2508,7 +3130,7 @@ func ParseAdminGetUserResponse(rsp *http.Response) (*AdminGetUserResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest User
+		var dest AdminUserResponseDto
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2527,6 +3149,86 @@ func ParseAdminGetUserResponse(rsp *http.Response) (*AdminGetUserResponse, error
 			return nil, err
 		}
 		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminUpdateUserResponse parses an HTTP response from a AdminUpdateUserWithResponse call
+func ParseAdminUpdateUserResponse(rsp *http.Response) (*AdminUpdateUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminUpdateUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminResetTwoFactorResponse parses an HTTP response from a AdminResetTwoFactorWithResponse call
+func ParseAdminResetTwoFactorResponse(rsp *http.Response) (*AdminResetTwoFactorResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminResetTwoFactorResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest map[string]interface{}
@@ -2607,6 +3309,46 @@ func ParseAdminDeactivateUserResponse(rsp *http.Response) (*AdminDeactivateUserR
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminResetPasskeysResponse parses an HTTP response from a AdminResetPasskeysWithResponse call
+func ParseAdminResetPasskeysResponse(rsp *http.Response) (*AdminResetPasskeysResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminResetPasskeysResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest map[string]interface{}
