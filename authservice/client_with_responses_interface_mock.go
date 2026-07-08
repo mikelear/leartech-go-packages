@@ -421,43 +421,6 @@ func (_m *MockClientWithResponsesInterface) AdminListAuditWithResponse(ctx conte
 	return r0, r1
 }
 
-// AdminListClientsWithResponse provides a mock function with given fields: ctx, params, reqEditors
-func (_m *MockClientWithResponsesInterface) AdminListClientsWithResponse(ctx context.Context, params *AdminListClientsParams, reqEditors ...RequestEditorFn) (*AdminListClientsResponse, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, params)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for AdminListClientsWithResponse")
-	}
-
-	var r0 *AdminListClientsResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *AdminListClientsParams, ...RequestEditorFn) (*AdminListClientsResponse, error)); ok {
-		return rf(ctx, params, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, *AdminListClientsParams, ...RequestEditorFn) *AdminListClientsResponse); ok {
-		r0 = rf(ctx, params, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*AdminListClientsResponse)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, *AdminListClientsParams, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, params, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // AdminListTenantsWithResponse provides a mock function with given fields: ctx, reqEditors
 func (_m *MockClientWithResponsesInterface) AdminListTenantsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListTenantsResponse, error) {
 	_va := make([]interface{}, len(reqEditors))

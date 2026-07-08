@@ -51,17 +51,13 @@ type AdminUpdateUserRequest struct {
 
 // AdminUserResponseDto defines model for AdminUserResponseDto.
 type AdminUserResponseDto struct {
-	Active      *bool   `json:"active,omitempty"`
-	CreatedAt   *string `json:"createdAt,omitempty"`
-	DisplayName *string `json:"displayName,omitempty"`
-	Email       *string `json:"email,omitempty"`
-	Has2FA      *bool   `json:"has2FA,omitempty"`
-	HasPasskey  *bool   `json:"hasPasskey,omitempty"`
-	Id          *string `json:"id,omitempty"`
-
-	// LastLoginAt LastLoginAt is the most recent successful login (password or passkey).
-	// Nil when the user has never logged in (e.g. invite-pending). Read-only.
-	LastLoginAt *string   `json:"lastLoginAt,omitempty"`
+	Active      *bool     `json:"active,omitempty"`
+	CreatedAt   *string   `json:"createdAt,omitempty"`
+	DisplayName *string   `json:"displayName,omitempty"`
+	Email       *string   `json:"email,omitempty"`
+	Has2FA      *bool     `json:"has2FA,omitempty"`
+	HasPasskey  *bool     `json:"hasPasskey,omitempty"`
+	Id          *string   `json:"id,omitempty"`
 	Permissions *[]string `json:"permissions,omitempty"`
 	Role        *string   `json:"role,omitempty"`
 	TenantId    *string   `json:"tenantId,omitempty"`
@@ -141,15 +137,11 @@ type TwoFactorSubmitRequest struct {
 
 // User defines model for User.
 type User struct {
-	Active      *bool   `json:"active,omitempty"`
-	CreatedAt   *string `json:"createdAt,omitempty"`
-	DisplayName *string `json:"displayName,omitempty"`
-	Email       *string `json:"email,omitempty"`
-	Id          *string `json:"id,omitempty"`
-
-	// LastLoginAt LastLoginAt is the most recent successful login (password or passkey).
-	// Nil when the user has never logged in (e.g. invite-pending). Read-only.
-	LastLoginAt *string   `json:"lastLoginAt,omitempty"`
+	Active      *bool     `json:"active,omitempty"`
+	CreatedAt   *string   `json:"createdAt,omitempty"`
+	DisplayName *string   `json:"displayName,omitempty"`
+	Email       *string   `json:"email,omitempty"`
+	Id          *string   `json:"id,omitempty"`
 	Permissions *[]string `json:"permissions,omitempty"`
 	Role        *string   `json:"role,omitempty"`
 	TenantId    *string   `json:"tenantId,omitempty"`
@@ -166,12 +158,6 @@ type AdminListAuditParams struct {
 
 	// Action Filter by action
 	Action *string `form:"action,omitempty" json:"action,omitempty"`
-}
-
-// AdminListClientsParams defines parameters for AdminListClients.
-type AdminListClientsParams struct {
-	// Limit Page size (default 100, max 500)
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // GetConsentParams defines parameters for GetConsent.
@@ -307,9 +293,6 @@ type ClientInterface interface {
 	// AdminListAudit request
 	AdminListAudit(ctx context.Context, params *AdminListAuditParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// AdminListClients request
-	AdminListClients(ctx context.Context, params *AdminListClientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// AdminListTenants request
 	AdminListTenants(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -406,18 +389,6 @@ type ClientInterface interface {
 
 func (c *Client) AdminListAudit(ctx context.Context, params *AdminListAuditParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAdminListAuditRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) AdminListClients(ctx context.Context, params *AdminListClientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAdminListClientsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -893,55 +864,6 @@ func NewAdminListAuditRequest(server string, params *AdminListAuditParams) (*htt
 		if params.Action != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "action", runtime.ParamLocationQuery, *params.Action); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewAdminListClientsRequest generates requests for AdminListClients
-func NewAdminListClientsRequest(server string, params *AdminListClientsParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/auth/admin/clients")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if params.Limit != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -1971,9 +1893,6 @@ type ClientWithResponsesInterface interface {
 	// AdminListAuditWithResponse request
 	AdminListAuditWithResponse(ctx context.Context, params *AdminListAuditParams, reqEditors ...RequestEditorFn) (*AdminListAuditResponse, error)
 
-	// AdminListClientsWithResponse request
-	AdminListClientsWithResponse(ctx context.Context, params *AdminListClientsParams, reqEditors ...RequestEditorFn) (*AdminListClientsResponse, error)
-
 	// AdminListTenantsWithResponse request
 	AdminListTenantsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListTenantsResponse, error)
 
@@ -2087,31 +2006,6 @@ func (r AdminListAuditResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r AdminListAuditResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type AdminListClientsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *map[string]interface{}
-	JSON401      *map[string]interface{}
-	JSON403      *map[string]interface{}
-	JSON500      *map[string]interface{}
-}
-
-// Status returns HTTPResponse.Status
-func (r AdminListClientsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r AdminListClientsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2740,15 +2634,6 @@ func (c *ClientWithResponses) AdminListAuditWithResponse(ctx context.Context, pa
 	return ParseAdminListAuditResponse(rsp)
 }
 
-// AdminListClientsWithResponse request returning *AdminListClientsResponse
-func (c *ClientWithResponses) AdminListClientsWithResponse(ctx context.Context, params *AdminListClientsParams, reqEditors ...RequestEditorFn) (*AdminListClientsResponse, error) {
-	rsp, err := c.AdminListClients(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseAdminListClientsResponse(rsp)
-}
-
 // AdminListTenantsWithResponse request returning *AdminListTenantsResponse
 func (c *ClientWithResponses) AdminListTenantsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminListTenantsResponse, error) {
 	rsp, err := c.AdminListTenants(ctx, reqEditors...)
@@ -3055,53 +2940,6 @@ func ParseAdminListAuditResponse(rsp *http.Response) (*AdminListAuditResponse, e
 	}
 
 	response := &AdminListAuditResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]interface{}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest map[string]interface{}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest map[string]interface{}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest map[string]interface{}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseAdminListClientsResponse parses an HTTP response from a AdminListClientsWithResponse call
-func ParseAdminListClientsResponse(rsp *http.Response) (*AdminListClientsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &AdminListClientsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
