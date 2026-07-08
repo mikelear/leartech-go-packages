@@ -51,13 +51,17 @@ type AdminUpdateUserRequest struct {
 
 // AdminUserResponseDto defines model for AdminUserResponseDto.
 type AdminUserResponseDto struct {
-	Active      *bool     `json:"active,omitempty"`
-	CreatedAt   *string   `json:"createdAt,omitempty"`
-	DisplayName *string   `json:"displayName,omitempty"`
-	Email       *string   `json:"email,omitempty"`
-	Has2FA      *bool     `json:"has2FA,omitempty"`
-	HasPasskey  *bool     `json:"hasPasskey,omitempty"`
-	Id          *string   `json:"id,omitempty"`
+	Active      *bool   `json:"active,omitempty"`
+	CreatedAt   *string `json:"createdAt,omitempty"`
+	DisplayName *string `json:"displayName,omitempty"`
+	Email       *string `json:"email,omitempty"`
+	Has2FA      *bool   `json:"has2FA,omitempty"`
+	HasPasskey  *bool   `json:"hasPasskey,omitempty"`
+	Id          *string `json:"id,omitempty"`
+
+	// LastLoginAt LastLoginAt is the most recent successful login (password or passkey).
+	// Nil when the user has never logged in (e.g. invite-pending). Read-only.
+	LastLoginAt *string   `json:"lastLoginAt,omitempty"`
 	Permissions *[]string `json:"permissions,omitempty"`
 	Role        *string   `json:"role,omitempty"`
 	TenantId    *string   `json:"tenantId,omitempty"`
@@ -137,11 +141,15 @@ type TwoFactorSubmitRequest struct {
 
 // User defines model for User.
 type User struct {
-	Active      *bool     `json:"active,omitempty"`
-	CreatedAt   *string   `json:"createdAt,omitempty"`
-	DisplayName *string   `json:"displayName,omitempty"`
-	Email       *string   `json:"email,omitempty"`
-	Id          *string   `json:"id,omitempty"`
+	Active      *bool   `json:"active,omitempty"`
+	CreatedAt   *string `json:"createdAt,omitempty"`
+	DisplayName *string `json:"displayName,omitempty"`
+	Email       *string `json:"email,omitempty"`
+	Id          *string `json:"id,omitempty"`
+
+	// LastLoginAt LastLoginAt is the most recent successful login (password or passkey).
+	// Nil when the user has never logged in (e.g. invite-pending). Read-only.
+	LastLoginAt *string   `json:"lastLoginAt,omitempty"`
 	Permissions *[]string `json:"permissions,omitempty"`
 	Role        *string   `json:"role,omitempty"`
 	TenantId    *string   `json:"tenantId,omitempty"`
