@@ -3,7 +3,7 @@ module github.com/mikelear/leartech-go-packages/maestroservice
 go 1.24.4
 
 require (
-	github.com/oapi-codegen/runtime v1.4.2
+	github.com/oapi-codegen/runtime v1.6.0
 	github.com/stretchr/testify v1.11.1
 )
 
