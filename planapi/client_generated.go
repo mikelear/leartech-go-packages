@@ -779,6 +779,7 @@ type GetPlansResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]DtoPlan
 	JSON401      *map[string]string
+	JSON403      *map[string]string
 	JSON500      *map[string]string
 }
 
@@ -830,6 +831,7 @@ type GetPlansNameResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *DtoPlan
 	JSON401      *map[string]string
+	JSON403      *map[string]string
 	JSON404      *map[string]string
 	JSON500      *map[string]string
 }
@@ -855,6 +857,7 @@ type GetPlansNameStepsStepGatesResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *DtoGates
 	JSON401      *map[string]string
+	JSON403      *map[string]string
 	JSON404      *map[string]string
 	JSON500      *map[string]string
 }
@@ -997,6 +1000,13 @@ func ParseGetPlansResponse(rsp *http.Response) (*GetPlansResponse, error) {
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest map[string]string
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1098,6 +1108,13 @@ func ParseGetPlansNameResponse(rsp *http.Response) (*GetPlansNameResponse, error
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest map[string]string
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1144,6 +1161,13 @@ func ParseGetPlansNameStepsStepGatesResponse(rsp *http.Response) (*GetPlansNameS
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest map[string]string
