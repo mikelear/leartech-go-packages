@@ -20,6 +20,26 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// Defines values for DtoCreatePlanStepKind.
+const (
+	DtoCreatePlanStepKindApply DtoCreatePlanStepKind = "apply"
+	DtoCreatePlanStepKindCheck DtoCreatePlanStepKind = "check"
+	DtoCreatePlanStepKindPr    DtoCreatePlanStepKind = "pr"
+)
+
+// Defines values for DtoStepKind.
+const (
+	DtoStepKindApply DtoStepKind = "apply"
+	DtoStepKindCheck DtoStepKind = "check"
+	DtoStepKindPr    DtoStepKind = "pr"
+)
+
+// Defines values for DtoStepVerdict.
+const (
+	FAIL DtoStepVerdict = "FAIL"
+	PASS DtoStepVerdict = "PASS"
+)
+
 // DtoCheck defines model for dto.Check.
 type DtoCheck struct {
 	// Cluster Cluster is the cluster prefix parsed off the check name (gcp | az).
@@ -88,9 +108,11 @@ type DtoCreatePlanRequest struct {
 
 // DtoCreatePlanStep defines model for dto.CreatePlanStep.
 type DtoCreatePlanStep struct {
-	// AgentType AgentType names the AgentType CR the step's AgentRun runs on. Must
-	// exist on the cluster. Required.
-	AgentType string `json:"agentType"`
+	// AgentType AgentType names the AgentType CR the step's AgentRun runs on. Required
+	// for Kind="pr" (or empty Kind, which coerces to "pr"); MUST be empty for
+	// Kind="apply" / Kind="check" (the controller expands Use/With; no
+	// AgentRun is spawned).
+	AgentType *string `json:"agentType,omitempty"`
 
 	// BudgetIter BudgetIter caps AgentRun iterations for this step. When nil, the
 	// AgentType default applies.
@@ -118,7 +140,29 @@ type DtoCreatePlanStep struct {
 	// swaggertype:object gives generated clients a free-form object shape
 	// (matching the CRD's runtime.RawExtension) since json.RawMessage isn't
 	// a schema swagger can express as-is.
-	Inputs map[string]interface{} `json:"inputs"`
+	//
+	// Required for Kind="pr" (the AgentRun run payload); ignored for
+	// Kind="apply" / Kind="check" (they use With instead).
+	Inputs *map[string]interface{} `json:"inputs,omitempty"`
+
+	// Kind Kind discriminates the step shape:
+	//
+	//   - "pr"    — agent-driven "open a PR" (the default; empty coerces
+	//               here at admission so pre-Kind callers keep working).
+	//               Requires AgentType.
+	//   - "apply" — controller-side templated apply; requires Use, may
+	//               carry With as opaque args. AgentType is ignored.
+	//   - "check" — controller-side read-only validation; the controller
+	//               populates PlanStepStatus.Verdict (PASS|FAIL) once the
+	//               check has run. Requires Use, may carry With.
+	//               AgentType is ignored.
+	//
+	// Plan-api VALIDATES the enum but does NOT expand Use/With — the
+	// controller owns the templated-step catalog. Storing them
+	// unexpanded lets the controller evolve its catalog without a
+	// plan-api schema bump.
+	// +kubebuilder:validation:Enum=pr;apply;check
+	Kind *DtoCreatePlanStepKind `json:"kind,omitempty"`
 
 	// Name Name uniquely identifies the step within this Plan. Required.
 	// Validated: DNS-1123 label (no uppercase, ≤63 chars).
@@ -126,7 +170,39 @@ type DtoCreatePlanStep struct {
 
 	// Repo Repo, when set, is the target repo the AgentRun clones and works on.
 	Repo *string `json:"repo,omitempty"`
+
+	// Use Use is the templated-step reference the controller expands for
+	// Kind="apply" / Kind="check". Opaque to plan-api — a short string
+	// naming a template in the controller's registry (e.g. "helmfile-apply",
+	// "http-probe"). Ignored for Kind="pr".
+	Use *string `json:"use,omitempty"`
+
+	// With With is the opaque args bag paired with Use to expand the templated
+	// step. Stored verbatim (raw JSON) so plan-api never has to know the
+	// arg shape of any given template. swaggertype:object gives generated
+	// clients a free-form object shape (matching runtime.RawExtension).
+	// Ignored for Kind="pr".
+	With *map[string]interface{} `json:"with,omitempty"`
 }
+
+// DtoCreatePlanStepKind Kind discriminates the step shape:
+//
+//   - "pr"    — agent-driven "open a PR" (the default; empty coerces
+//     here at admission so pre-Kind callers keep working).
+//     Requires AgentType.
+//   - "apply" — controller-side templated apply; requires Use, may
+//     carry With as opaque args. AgentType is ignored.
+//   - "check" — controller-side read-only validation; the controller
+//     populates PlanStepStatus.Verdict (PASS|FAIL) once the
+//     check has run. Requires Use, may carry With.
+//     AgentType is ignored.
+//
+// Plan-api VALIDATES the enum but does NOT expand Use/With — the
+// controller owns the templated-step catalog. Storing them
+// unexpanded lets the controller evolve its catalog without a
+// plan-api schema bump.
+// +kubebuilder:validation:Enum=pr;apply;check
+type DtoCreatePlanStepKind string
 
 // DtoDecision defines model for dto.Decision.
 type DtoDecision struct {
@@ -241,7 +317,8 @@ type DtoStep struct {
 	AgentRunName *string `json:"agentRunName,omitempty"`
 
 	// AgentType AgentType names the AgentType CR the step's AgentRun runs on
-	// (per-language runtime — leartech-agent-{py,go,ng,rust}).
+	// (per-language runtime — leartech-agent-{py,go,ng,rust}). Empty for
+	// Kind="apply" / Kind="check" (they spawn no AgentRun).
 	AgentType *string `json:"agentType,omitempty"`
 
 	// DependsOn DependsOn lists step Names this step waits on. A step is eligible only
@@ -259,6 +336,13 @@ type DtoStep struct {
 	// When true the reconciler routes the step to
 	// StepPhase=AwaitingApproval once its agent opens a PR.
 	Hold *bool `json:"hold,omitempty"`
+
+	// Kind Kind is the step-shape discriminator: "pr" (agent-driven, the
+	// default), "apply" (controller-side templated apply), or "check"
+	// (controller-side read-only validation). Empty in the response is
+	// treated as "pr" — the mapper coalesces an unset Kind to "pr" so
+	// consumers never see the literal empty string.
+	Kind *DtoStepKind `json:"kind,omitempty"`
 
 	// Message Message is a short diagnostic set by the reconciler when the step
 	// transitions for a non-obvious reason. Empty on the happy path.
@@ -289,7 +373,38 @@ type DtoStep struct {
 	// dependsReady / plan roll-up key off StepPhase=Succeeded (PR merged),
 	// not Phase=Succeeded (agent finished).
 	StepPhase *string `json:"stepPhase,omitempty"`
+
+	// Use Use is the templated-step reference (e.g. "http-probe") the
+	// controller expands for Kind="apply" / Kind="check" steps. Empty
+	// for Kind="pr".
+	Use *string `json:"use,omitempty"`
+
+	// Verdict Verdict is the PASS / FAIL result the controller records for a
+	// Kind="check" step once its read-only validation has run. Empty for
+	// Kind="pr" (they use PROutcome + StepPhase instead) and Kind="apply"
+	// (they use StepPhase). Surfaced distinctly so a check-step outcome
+	// badge in the portal doesn't have to interpret Succeeded/Failed.
+	Verdict *DtoStepVerdict `json:"verdict,omitempty"`
+
+	// With With is the opaque args bag paired with Use to expand a templated
+	// step. Empty (nil) for Kind="pr". Surfaced verbatim (raw JSON) so
+	// the portal can render whatever the controller's template accepted.
+	With *map[string]interface{} `json:"with,omitempty"`
 }
+
+// DtoStepKind Kind is the step-shape discriminator: "pr" (agent-driven, the
+// default), "apply" (controller-side templated apply), or "check"
+// (controller-side read-only validation). Empty in the response is
+// treated as "pr" — the mapper coalesces an unset Kind to "pr" so
+// consumers never see the literal empty string.
+type DtoStepKind string
+
+// DtoStepVerdict Verdict is the PASS / FAIL result the controller records for a
+// Kind="check" step once its read-only validation has run. Empty for
+// Kind="pr" (they use PROutcome + StepPhase instead) and Kind="apply"
+// (they use StepPhase). Surfaced distinctly so a check-step outcome
+// badge in the portal doesn't have to interpret Succeeded/Failed.
+type DtoStepVerdict string
 
 // PostPlansJSONRequestBody defines body for PostPlans for application/json ContentType.
 type PostPlansJSONRequestBody = DtoCreatePlanRequest
