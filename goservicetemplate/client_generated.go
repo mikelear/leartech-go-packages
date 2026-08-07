@@ -4,7 +4,6 @@
 package goservicetemplate
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,84 +11,17 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/oapi-codegen/runtime"
 )
 
 const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
-// InternalHandlersExampleResponseDto defines model for internal_handlers.ExampleResponseDto.
-type InternalHandlersExampleResponseDto struct {
+// HandlersExampleResponseDto defines model for handlers.ExampleResponseDto.
+type HandlersExampleResponseDto struct {
 	Message *string `json:"message,omitempty"`
 	Service *string `json:"service,omitempty"`
 }
-
-// InternalHandlersFleetTestResponseDto defines model for internal_handlers.fleetTestResponseDto.
-type InternalHandlersFleetTestResponseDto struct {
-	Results *[]InternalHandlersPeerResult `json:"results,omitempty"`
-	Success *bool                         `json:"success,omitempty"`
-	Summary *string                       `json:"summary,omitempty"`
-}
-
-// InternalHandlersPeerResult defines model for internal_handlers.peerResult.
-type InternalHandlersPeerResult struct {
-	DurationMs *int    `json:"duration_ms,omitempty"`
-	HttpCode   *int    `json:"http_code,omitempty"`
-	Message    *string `json:"message,omitempty"`
-	Ok         *bool   `json:"ok,omitempty"`
-	Peer       *string `json:"peer,omitempty"`
-}
-
-// MaestroConsumeEventRequestDto defines model for maestro.ConsumeEventRequestDto.
-type MaestroConsumeEventRequestDto struct {
-	// ActionedBy ActionedBy is the userId (or system-actor id) from the announcement,
-	// when present.
-	ActionedBy *string `json:"actionedBy,omitempty"`
-
-	// Annotations Annotations are the string k/v pairs from the announcement. Same
-	// vocabulary as pkg/maestro.Event.Annotations on the producer side.
-	Annotations *map[string]string `json:"annotations,omitempty"`
-
-	// Id ID is the unique event id Maestro assigned at announce time.
-	Id *string `json:"id,omitempty"`
-
-	// Name Name is the dotted event name — the dispatch key.
-	Name *string `json:"name,omitempty"`
-
-	// ProducedTime ProducedTime is the RFC3339 timestamp of the original announcement.
-	// Maestro emits an RFC3339 string; we decode with time.Time so
-	// downstream handlers get a native value.
-	ProducedTime *string `json:"producedTime,omitempty"`
-}
-
-// MaestroConsumeEventResponseDto defines model for maestro.ConsumeEventResponseDto.
-type MaestroConsumeEventResponseDto struct {
-	// ErrorReason ErrorReason is a human-readable description when IsErrored is
-	// true or when the event was dropped for a non-error reason
-	// (unknown event, malformed body).
-	ErrorReason *string `json:"errorReason,omitempty"`
-
-	// IsConsumed IsConsumed is true when the event was successfully handled.
-	// Maestro treats IsConsumed=true (regardless of HTTP status) as
-	// "settled, do not retry".
-	IsConsumed *bool `json:"isConsumed,omitempty"`
-
-	// IsErrored IsErrored is true when handler execution failed. Distinct from
-	// !IsConsumed so we can signal "no handler registered" (neither
-	// consumed nor errored) vs. "handler ran and blew up" (errored).
-	IsErrored *bool `json:"isErrored,omitempty"`
-}
-
-// GetConfirmedParams defines parameters for GetConfirmed.
-type GetConfirmedParams struct {
-	// Name Event name to check for (e.g. test.release.deploy_failed)
-	Name string `form:"name" json:"name"`
-}
-
-// PostConsumeEventJSONRequestBody defines body for PostConsumeEvent for application/json ContentType.
-type PostConsumeEventJSONRequestBody = MaestroConsumeEventRequestDto
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -167,20 +99,6 @@ type ClientInterface interface {
 	// GetApiV1Example request
 	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetApiV1FleetTest request
-	GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetConfirmed request
-	GetConfirmed(ctx context.Context, params *GetConfirmedParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostConsumeEventWithBody request with any body
-	PostConsumeEventWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostConsumeEvent(ctx context.Context, body PostConsumeEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetEvents request
-	GetEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -190,66 +108,6 @@ type ClientInterface interface {
 
 func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetApiV1ExampleRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1FleetTestRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetConfirmed(ctx context.Context, params *GetConfirmedParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetConfirmedRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostConsumeEventWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostConsumeEventRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostConsumeEvent(ctx context.Context, body PostConsumeEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostConsumeEventRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetEventsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -294,145 +152,6 @@ func NewGetApiV1ExampleRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/example")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetApiV1FleetTestRequest generates requests for GetApiV1FleetTest
-func NewGetApiV1FleetTestRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/fleet-test")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetConfirmedRequest generates requests for GetConfirmed
-func NewGetConfirmedRequest(server string, params *GetConfirmedParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/confirmed")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "name", runtime.ParamLocationQuery, params.Name); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewPostConsumeEventRequest calls the generic PostConsumeEvent builder with application/json body
-func NewPostConsumeEventRequest(server string, body PostConsumeEventJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPostConsumeEventRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewPostConsumeEventRequestWithBody generates requests for PostConsumeEvent with any type of body
-func NewPostConsumeEventRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/consume_event")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetEventsRequest generates requests for GetEvents
-func NewGetEventsRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/events")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -550,20 +269,6 @@ type ClientWithResponsesInterface interface {
 	// GetApiV1ExampleWithResponse request
 	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
 
-	// GetApiV1FleetTestWithResponse request
-	GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error)
-
-	// GetConfirmedWithResponse request
-	GetConfirmedWithResponse(ctx context.Context, params *GetConfirmedParams, reqEditors ...RequestEditorFn) (*GetConfirmedResponse, error)
-
-	// PostConsumeEventWithBodyWithResponse request with any body
-	PostConsumeEventWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostConsumeEventResponse, error)
-
-	PostConsumeEventWithResponse(ctx context.Context, body PostConsumeEventJSONRequestBody, reqEditors ...RequestEditorFn) (*PostConsumeEventResponse, error)
-
-	// GetEventsWithResponse request
-	GetEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventsResponse, error)
-
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
 
@@ -574,7 +279,7 @@ type ClientWithResponsesInterface interface {
 type GetApiV1ExampleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *InternalHandlersExampleResponseDto
+	JSON200      *HandlersExampleResponseDto
 	JSON401      *map[string]string
 }
 
@@ -588,94 +293,6 @@ func (r GetApiV1ExampleResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetApiV1ExampleResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetApiV1FleetTestResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *InternalHandlersFleetTestResponseDto
-	JSON401      *map[string]string
-}
-
-// Status returns HTTPResponse.Status
-func (r GetApiV1FleetTestResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1FleetTestResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetConfirmedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetConfirmedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetConfirmedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostConsumeEventResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *MaestroConsumeEventResponseDto
-	JSON400      *MaestroConsumeEventResponseDto
-}
-
-// Status returns HTTPResponse.Status
-func (r PostConsumeEventResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostConsumeEventResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetEventsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetEventsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetEventsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -733,50 +350,6 @@ func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, r
 	return ParseGetApiV1ExampleResponse(rsp)
 }
 
-// GetApiV1FleetTestWithResponse request returning *GetApiV1FleetTestResponse
-func (c *ClientWithResponses) GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error) {
-	rsp, err := c.GetApiV1FleetTest(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1FleetTestResponse(rsp)
-}
-
-// GetConfirmedWithResponse request returning *GetConfirmedResponse
-func (c *ClientWithResponses) GetConfirmedWithResponse(ctx context.Context, params *GetConfirmedParams, reqEditors ...RequestEditorFn) (*GetConfirmedResponse, error) {
-	rsp, err := c.GetConfirmed(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetConfirmedResponse(rsp)
-}
-
-// PostConsumeEventWithBodyWithResponse request with arbitrary body returning *PostConsumeEventResponse
-func (c *ClientWithResponses) PostConsumeEventWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostConsumeEventResponse, error) {
-	rsp, err := c.PostConsumeEventWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostConsumeEventResponse(rsp)
-}
-
-func (c *ClientWithResponses) PostConsumeEventWithResponse(ctx context.Context, body PostConsumeEventJSONRequestBody, reqEditors ...RequestEditorFn) (*PostConsumeEventResponse, error) {
-	rsp, err := c.PostConsumeEvent(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostConsumeEventResponse(rsp)
-}
-
-// GetEventsWithResponse request returning *GetEventsResponse
-func (c *ClientWithResponses) GetEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventsResponse, error) {
-	rsp, err := c.GetEvents(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetEventsResponse(rsp)
-}
-
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
 func (c *ClientWithResponses) GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error) {
 	rsp, err := c.GetHealthLive(ctx, reqEditors...)
@@ -810,7 +383,7 @@ func ParseGetApiV1ExampleResponse(rsp *http.Response) (*GetApiV1ExampleResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest InternalHandlersExampleResponseDto
+		var dest HandlersExampleResponseDto
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -823,104 +396,6 @@ func ParseGetApiV1ExampleResponse(rsp *http.Response) (*GetApiV1ExampleResponse,
 		}
 		response.JSON401 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParseGetApiV1FleetTestResponse parses an HTTP response from a GetApiV1FleetTestWithResponse call
-func ParseGetApiV1FleetTestResponse(rsp *http.Response) (*GetApiV1FleetTestResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetApiV1FleetTestResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest InternalHandlersFleetTestResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetConfirmedResponse parses an HTTP response from a GetConfirmedWithResponse call
-func ParseGetConfirmedResponse(rsp *http.Response) (*GetConfirmedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetConfirmedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParsePostConsumeEventResponse parses an HTTP response from a PostConsumeEventWithResponse call
-func ParsePostConsumeEventResponse(rsp *http.Response) (*PostConsumeEventResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostConsumeEventResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MaestroConsumeEventResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest MaestroConsumeEventResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetEventsResponse parses an HTTP response from a GetEventsWithResponse call
-func ParseGetEventsResponse(rsp *http.Response) (*GetEventsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetEventsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
 	}
 
 	return response, nil
