@@ -4,13 +4,188 @@
 package planapi
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/oapi-codegen/runtime"
 )
+
+const (
+	BearerAuthScopes = "BearerAuth.Scopes"
+)
+
+// HandlersCreateRequest defines model for handlers.CreateRequest.
+type HandlersCreateRequest struct {
+	Files  []HandlersFileDecl `json:"files"`
+	Kind   string             `json:"kind"`
+	Label  string             `json:"label"`
+	Target *string            `json:"target,omitempty"`
+	Ttl    *string            `json:"ttl,omitempty"`
+}
+
+// HandlersCreateResponseDto defines model for handlers.CreateResponseDto.
+type HandlersCreateResponseDto struct {
+	ExpiresAt  *string                  `json:"expiresAt,omitempty"`
+	Id         *string                  `json:"id,omitempty"`
+	Revision   *int                     `json:"revision,omitempty"`
+	UploadURL  *string                  `json:"uploadURL,omitempty"`
+	UploadURLs *[]HandlersSignedFileURL `json:"uploadURLs,omitempty"`
+}
+
+// HandlersFileDecl defines model for handlers.FileDecl.
+type HandlersFileDecl struct {
+	// Bytes Bytes is the intended byte length.
+	Bytes *int `json:"bytes,omitempty"`
+
+	// Path Path is relative to artifact/<guid>/<revision>/. Leading "/",
+	// "..", and the reserved name "manifest.json" are rejected —
+	// the storage layer's FileObject validator does this.
+	Path string `json:"path"`
+
+	// Sha256 SHA256 is the expected lowercase hex digest — persisted on
+	// finalize so consumers can integrity-check downloads.
+	Sha256 *string `json:"sha256,omitempty"`
+}
+
+// HandlersFinalizeRequest defines model for handlers.FinalizeRequest.
+type HandlersFinalizeRequest struct {
+	Files    []HandlersFileDecl `json:"files"`
+	Kind     *string            `json:"kind,omitempty"`
+	Label    *string            `json:"label,omitempty"`
+	Producer *string            `json:"producer,omitempty"`
+	Revision int                `json:"revision"`
+	Target   *string            `json:"target,omitempty"`
+	Ttl      *string            `json:"ttl,omitempty"`
+}
+
+// HandlersGetResponseDto defines model for handlers.GetResponseDto.
+type HandlersGetResponseDto struct {
+	DownloadURLs *[]HandlersSignedFileURL `json:"downloadURLs,omitempty"`
+	Manifest     *StorageManifest         `json:"manifest,omitempty"`
+}
+
+// HandlersListResponseDto defines model for handlers.ListResponseDto.
+type HandlersListResponseDto struct {
+	Artifacts *[]StorageManifest `json:"artifacts,omitempty"`
+}
+
+// HandlersSignedFileURL defines model for handlers.SignedFileURL.
+type HandlersSignedFileURL struct {
+	ExpiresAt *string `json:"expiresAt,omitempty"`
+	Method    *string `json:"method,omitempty"`
+	Path      *string `json:"path,omitempty"`
+	Url       *string `json:"url,omitempty"`
+}
+
+// HandlersErrorBody defines model for handlers.errorBody.
+type HandlersErrorBody struct {
+	Error *string `json:"error,omitempty"`
+}
+
+// StorageFile defines model for storage.File.
+type StorageFile struct {
+	// Bytes Bytes is the object's size in bytes.
+	Bytes *int `json:"bytes,omitempty"`
+
+	// Path Path is the file's path within the revision, relative to
+	// artifact/<guid>/<revision>/. Leading slashes are stripped.
+	// Must not equal "manifest.json" — that key is reserved.
+	Path *string `json:"path,omitempty"`
+
+	// Sha256 SHA256 is the lowercase hex-encoded SHA-256 digest of the
+	// object's contents. Consumers verify downloads against this.
+	Sha256 *string `json:"sha256,omitempty"`
+}
+
+// StorageManifest defines model for storage.Manifest.
+type StorageManifest struct {
+	// Files Files enumerates the objects in the revision, each with its
+	// byte length and SHA-256 digest so consumers can integrity-
+	// check downloads.
+	Files *[]StorageFile `json:"files,omitempty"`
+
+	// Id ID is the artifact GUID (RFC 4122). Stable across revisions.
+	Id *string `json:"id,omitempty"`
+
+	// Kind Kind is the artifact kind (free-form string, e.g. "markdown",
+	// "template", "dataset"). Consumers may filter on kind.
+	Kind *string `json:"kind,omitempty"`
+
+	// Label Label is the human-facing discovery key. Multiple artifacts may
+	// share a label (e.g. "coding-standards.md") — the GUID
+	// disambiguates. Immutable per revision but MAY differ between
+	// revisions (a label rename is a new revision, not a mutation).
+	Label *string `json:"label,omitempty"`
+
+	// Producer Producer identifies what minted THIS revision (agent id, CI
+	// system, human). PER REVISION — a subsequent revision may have
+	// a different producer (a human amendment to an agent-authored
+	// artifact, say).
+	Producer *string `json:"producer,omitempty"`
+
+	// PublishedBy PublishedBy carries the authenticated identity that requested
+	// the publish. `client` is typically the OAuth client-id;
+	// `subject` is the token's `sub` claim.
+	PublishedBy *StoragePublisher `json:"publishedBy,omitempty"`
+
+	// Revision Revision is the monotonically-increasing revision number of
+	// this manifest under the artifact GUID. Starts at 1.
+	Revision *int `json:"revision,omitempty"`
+
+	// Target Target optionally scopes the artifact (e.g. a repo, a service).
+	// Empty means unscoped / universally applicable.
+	Target *string `json:"target,omitempty"`
+
+	// Tenant Tenant is the caller's tenant id, extracted from the token's
+	// ext.tenant_id claim at write time and PERSISTED in the manifest.
+	// It is the enforcement key for tenant isolation on reads: a GET
+	// for artifact X whose manifest.Tenant != caller.Tenant returns
+	// 404 (no existence leak). Empty tenant on the token → the
+	// caller is un-tenanted (service tokens without a tenant claim);
+	// such tokens can still author artifacts, and the manifest simply
+	// records an empty tenant. Un-tenanted callers can only see
+	// their own un-tenanted artifacts — same isolation rule, applied
+	// symmetrically.
+	Tenant *string `json:"tenant,omitempty"`
+
+	// Ttl TTL is the artifact's advisory time-to-live (RFC 3339 duration
+	// or timestamp — the field is a string, interpretation is the
+	// consumer's concern). Empty = no TTL.
+	Ttl *string `json:"ttl,omitempty"`
+}
+
+// StoragePublisher defines model for storage.Publisher.
+type StoragePublisher struct {
+	Client  *string `json:"client,omitempty"`
+	Subject *string `json:"subject,omitempty"`
+}
+
+// GetApiV1ArtifactsParams defines parameters for GetApiV1Artifacts.
+type GetApiV1ArtifactsParams struct {
+	// Kind filter by manifest.kind
+	Kind *string `form:"kind,omitempty" json:"kind,omitempty"`
+
+	// Label filter by manifest.label
+	Label *string `form:"label,omitempty" json:"label,omitempty"`
+
+	// Target filter by manifest.target
+	Target *string `form:"target,omitempty" json:"target,omitempty"`
+}
+
+// PostApiV1ArtifactsJSONRequestBody defines body for PostApiV1Artifacts for application/json ContentType.
+type PostApiV1ArtifactsJSONRequestBody = HandlersCreateRequest
+
+// PostApiV1ArtifactsIdFinalizeJSONRequestBody defines body for PostApiV1ArtifactsIdFinalize for application/json ContentType.
+type PostApiV1ArtifactsIdFinalizeJSONRequestBody = HandlersFinalizeRequest
+
+// PostApiV1ArtifactsIdRevisionsJSONRequestBody defines body for PostApiV1ArtifactsIdRevisions for application/json ContentType.
+type PostApiV1ArtifactsIdRevisionsJSONRequestBody = HandlersCreateRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -85,11 +260,128 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetApiV1Artifacts request
+	GetApiV1Artifacts(ctx context.Context, params *GetApiV1ArtifactsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostApiV1ArtifactsWithBody request with any body
+	PostApiV1ArtifactsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostApiV1Artifacts(ctx context.Context, body PostApiV1ArtifactsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1ArtifactsId request
+	GetApiV1ArtifactsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostApiV1ArtifactsIdFinalizeWithBody request with any body
+	PostApiV1ArtifactsIdFinalizeWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostApiV1ArtifactsIdFinalize(ctx context.Context, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostApiV1ArtifactsIdRevisionsWithBody request with any body
+	PostApiV1ArtifactsIdRevisionsWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostApiV1ArtifactsIdRevisions(ctx context.Context, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthReady request
 	GetHealthReady(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetApiV1Artifacts(ctx context.Context, params *GetApiV1ArtifactsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ArtifactsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1ArtifactsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ArtifactsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1Artifacts(ctx context.Context, body PostApiV1ArtifactsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ArtifactsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1ArtifactsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ArtifactsIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1ArtifactsIdFinalizeWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ArtifactsIdFinalizeRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1ArtifactsIdFinalize(ctx context.Context, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ArtifactsIdFinalizeRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1ArtifactsIdRevisionsWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ArtifactsIdRevisionsRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1ArtifactsIdRevisions(ctx context.Context, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ArtifactsIdRevisionsRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -114,6 +406,255 @@ func (c *Client) GetHealthReady(ctx context.Context, reqEditors ...RequestEditor
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewGetApiV1ArtifactsRequest generates requests for GetApiV1Artifacts
+func NewGetApiV1ArtifactsRequest(server string, params *GetApiV1ArtifactsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/artifacts")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Kind != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "kind", runtime.ParamLocationQuery, *params.Kind); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Label != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "label", runtime.ParamLocationQuery, *params.Label); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Target != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "target", runtime.ParamLocationQuery, *params.Target); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostApiV1ArtifactsRequest calls the generic PostApiV1Artifacts builder with application/json body
+func NewPostApiV1ArtifactsRequest(server string, body PostApiV1ArtifactsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostApiV1ArtifactsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostApiV1ArtifactsRequestWithBody generates requests for PostApiV1Artifacts with any type of body
+func NewPostApiV1ArtifactsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/artifacts")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetApiV1ArtifactsIdRequest generates requests for GetApiV1ArtifactsId
+func NewGetApiV1ArtifactsIdRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/artifacts/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostApiV1ArtifactsIdFinalizeRequest calls the generic PostApiV1ArtifactsIdFinalize builder with application/json body
+func NewPostApiV1ArtifactsIdFinalizeRequest(server string, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostApiV1ArtifactsIdFinalizeRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPostApiV1ArtifactsIdFinalizeRequestWithBody generates requests for PostApiV1ArtifactsIdFinalize with any type of body
+func NewPostApiV1ArtifactsIdFinalizeRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/artifacts/%s/finalize", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostApiV1ArtifactsIdRevisionsRequest calls the generic PostApiV1ArtifactsIdRevisions builder with application/json body
+func NewPostApiV1ArtifactsIdRevisionsRequest(server string, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostApiV1ArtifactsIdRevisionsRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPostApiV1ArtifactsIdRevisionsRequestWithBody generates requests for PostApiV1ArtifactsIdRevisions with any type of body
+func NewPostApiV1ArtifactsIdRevisionsRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/artifacts/%s/revisions", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
 }
 
 // NewGetHealthLiveRequest generates requests for GetHealthLive
@@ -213,11 +754,159 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetApiV1ArtifactsWithResponse request
+	GetApiV1ArtifactsWithResponse(ctx context.Context, params *GetApiV1ArtifactsParams, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsResponse, error)
+
+	// PostApiV1ArtifactsWithBodyWithResponse request with any body
+	PostApiV1ArtifactsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error)
+
+	PostApiV1ArtifactsWithResponse(ctx context.Context, body PostApiV1ArtifactsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error)
+
+	// GetApiV1ArtifactsIdWithResponse request
+	GetApiV1ArtifactsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsIdResponse, error)
+
+	// PostApiV1ArtifactsIdFinalizeWithBodyWithResponse request with any body
+	PostApiV1ArtifactsIdFinalizeWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error)
+
+	PostApiV1ArtifactsIdFinalizeWithResponse(ctx context.Context, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error)
+
+	// PostApiV1ArtifactsIdRevisionsWithBodyWithResponse request with any body
+	PostApiV1ArtifactsIdRevisionsWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error)
+
+	PostApiV1ArtifactsIdRevisionsWithResponse(ctx context.Context, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error)
+
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
 
 	// GetHealthReadyWithResponse request
 	GetHealthReadyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthReadyResponse, error)
+}
+
+type GetApiV1ArtifactsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersListResponseDto
+	JSON401      *HandlersErrorBody
+	JSON403      *HandlersErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1ArtifactsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1ArtifactsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostApiV1ArtifactsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *HandlersCreateResponseDto
+	JSON400      *HandlersErrorBody
+	JSON401      *HandlersErrorBody
+	JSON403      *HandlersErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r PostApiV1ArtifactsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostApiV1ArtifactsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1ArtifactsIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersGetResponseDto
+	JSON401      *HandlersErrorBody
+	JSON403      *HandlersErrorBody
+	JSON404      *HandlersErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1ArtifactsIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1ArtifactsIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostApiV1ArtifactsIdFinalizeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *StorageManifest
+	JSON400      *HandlersErrorBody
+	JSON401      *HandlersErrorBody
+	JSON403      *HandlersErrorBody
+	JSON404      *HandlersErrorBody
+	JSON409      *HandlersErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r PostApiV1ArtifactsIdFinalizeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostApiV1ArtifactsIdFinalizeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostApiV1ArtifactsIdRevisionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *HandlersCreateResponseDto
+	JSON400      *HandlersErrorBody
+	JSON401      *HandlersErrorBody
+	JSON403      *HandlersErrorBody
+	JSON404      *HandlersErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r PostApiV1ArtifactsIdRevisionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostApiV1ArtifactsIdRevisionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetHealthLiveResponse struct {
@@ -262,6 +951,75 @@ func (r GetHealthReadyResponse) StatusCode() int {
 	return 0
 }
 
+// GetApiV1ArtifactsWithResponse request returning *GetApiV1ArtifactsResponse
+func (c *ClientWithResponses) GetApiV1ArtifactsWithResponse(ctx context.Context, params *GetApiV1ArtifactsParams, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsResponse, error) {
+	rsp, err := c.GetApiV1Artifacts(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1ArtifactsResponse(rsp)
+}
+
+// PostApiV1ArtifactsWithBodyWithResponse request with arbitrary body returning *PostApiV1ArtifactsResponse
+func (c *ClientWithResponses) PostApiV1ArtifactsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error) {
+	rsp, err := c.PostApiV1ArtifactsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1ArtifactsResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostApiV1ArtifactsWithResponse(ctx context.Context, body PostApiV1ArtifactsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error) {
+	rsp, err := c.PostApiV1Artifacts(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1ArtifactsResponse(rsp)
+}
+
+// GetApiV1ArtifactsIdWithResponse request returning *GetApiV1ArtifactsIdResponse
+func (c *ClientWithResponses) GetApiV1ArtifactsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsIdResponse, error) {
+	rsp, err := c.GetApiV1ArtifactsId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1ArtifactsIdResponse(rsp)
+}
+
+// PostApiV1ArtifactsIdFinalizeWithBodyWithResponse request with arbitrary body returning *PostApiV1ArtifactsIdFinalizeResponse
+func (c *ClientWithResponses) PostApiV1ArtifactsIdFinalizeWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error) {
+	rsp, err := c.PostApiV1ArtifactsIdFinalizeWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1ArtifactsIdFinalizeResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostApiV1ArtifactsIdFinalizeWithResponse(ctx context.Context, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error) {
+	rsp, err := c.PostApiV1ArtifactsIdFinalize(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1ArtifactsIdFinalizeResponse(rsp)
+}
+
+// PostApiV1ArtifactsIdRevisionsWithBodyWithResponse request with arbitrary body returning *PostApiV1ArtifactsIdRevisionsResponse
+func (c *ClientWithResponses) PostApiV1ArtifactsIdRevisionsWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error) {
+	rsp, err := c.PostApiV1ArtifactsIdRevisionsWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1ArtifactsIdRevisionsResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostApiV1ArtifactsIdRevisionsWithResponse(ctx context.Context, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error) {
+	rsp, err := c.PostApiV1ArtifactsIdRevisions(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1ArtifactsIdRevisionsResponse(rsp)
+}
+
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
 func (c *ClientWithResponses) GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error) {
 	rsp, err := c.GetHealthLive(ctx, reqEditors...)
@@ -278,6 +1036,255 @@ func (c *ClientWithResponses) GetHealthReadyWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseGetHealthReadyResponse(rsp)
+}
+
+// ParseGetApiV1ArtifactsResponse parses an HTTP response from a GetApiV1ArtifactsWithResponse call
+func ParseGetApiV1ArtifactsResponse(rsp *http.Response) (*GetApiV1ArtifactsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1ArtifactsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersListResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostApiV1ArtifactsResponse parses an HTTP response from a PostApiV1ArtifactsWithResponse call
+func ParsePostApiV1ArtifactsResponse(rsp *http.Response) (*PostApiV1ArtifactsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostApiV1ArtifactsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest HandlersCreateResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1ArtifactsIdResponse parses an HTTP response from a GetApiV1ArtifactsIdWithResponse call
+func ParseGetApiV1ArtifactsIdResponse(rsp *http.Response) (*GetApiV1ArtifactsIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1ArtifactsIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersGetResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostApiV1ArtifactsIdFinalizeResponse parses an HTTP response from a PostApiV1ArtifactsIdFinalizeWithResponse call
+func ParsePostApiV1ArtifactsIdFinalizeResponse(rsp *http.Response) (*PostApiV1ArtifactsIdFinalizeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostApiV1ArtifactsIdFinalizeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StorageManifest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostApiV1ArtifactsIdRevisionsResponse parses an HTTP response from a PostApiV1ArtifactsIdRevisionsWithResponse call
+func ParsePostApiV1ArtifactsIdRevisionsResponse(rsp *http.Response) (*PostApiV1ArtifactsIdRevisionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostApiV1ArtifactsIdRevisionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest HandlersCreateResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest HandlersErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetHealthLiveResponse parses an HTTP response from a GetHealthLiveWithResponse call
