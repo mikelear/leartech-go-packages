@@ -20,6 +20,12 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// Defines values for StorageManifestState.
+const (
+	ManifestStateSealed   StorageManifestState = "sealed"
+	ManifestStateUnsealed StorageManifestState = "unsealed"
+)
+
 // HandlersCreateRequest defines model for handlers.CreateRequest.
 type HandlersCreateRequest struct {
 	Files  []HandlersFileDecl `json:"files"`
@@ -55,13 +61,16 @@ type HandlersFileDecl struct {
 
 // HandlersFinalizeRequest defines model for handlers.FinalizeRequest.
 type HandlersFinalizeRequest struct {
-	Files    []HandlersFileDecl `json:"files"`
-	Kind     *string            `json:"kind,omitempty"`
-	Label    *string            `json:"label,omitempty"`
-	Producer *string            `json:"producer,omitempty"`
-	Revision int                `json:"revision"`
-	Target   *string            `json:"target,omitempty"`
-	Ttl      *string            `json:"ttl,omitempty"`
+	// Producer Producer is an optional per-revision override for the sealed
+	// manifest's Producer field. Empty leaves whatever the unsealed
+	// manifest carried (typically empty at create; a CI system that
+	// wants to record its identity can set this at finalize).
+	Producer *string `json:"producer,omitempty"`
+
+	// Revision Revision is the revision to seal. Matched against the unsealed
+	// manifest at artifact/<guid>/<revision>/manifest.json; 404 when
+	// absent (unknown / never-created), 409 when already sealed.
+	Revision int `json:"revision"`
 }
 
 // HandlersGetResponseDto defines model for handlers.GetResponseDto.
@@ -108,6 +117,14 @@ type StorageManifest struct {
 	// Files Files enumerates the objects in the revision, each with its
 	// byte length and SHA-256 digest so consumers can integrity-
 	// check downloads.
+	//
+	// Interpretation depends on State:
+	//   - Unsealed: entries are DECLARATIONS from the caller (Bytes /
+	//     SHA256 may be zero / empty when the caller didn't declare).
+	//     No files have been observed in storage yet.
+	//   - Sealed: entries are OBSERVATIONS (Bytes / SHA256 computed
+	//     against the uploaded objects at seal time). Consumers verify
+	//     downloads against these values.
 	Files *[]StorageFile `json:"files,omitempty"`
 
 	// Id ID is the artifact GUID (RFC 4122). Stable across revisions.
@@ -138,6 +155,13 @@ type StorageManifest struct {
 	// this manifest under the artifact GUID. Starts at 1.
 	Revision *int `json:"revision,omitempty"`
 
+	// State State is the sealed/unsealed lifecycle marker. See the
+	// ManifestState constants for the semantics. Empty on manifests
+	// that predate the durability change; readers should treat the
+	// zero value as sealed for backward compatibility (matches the
+	// legacy "manifest present = revision finalized" invariant).
+	State *StorageManifestState `json:"state,omitempty"`
+
 	// Target Target optionally scopes the artifact (e.g. a repo, a service).
 	// Empty means unscoped / universally applicable.
 	Target *string `json:"target,omitempty"`
@@ -159,6 +183,9 @@ type StorageManifest struct {
 	// consumer's concern). Empty = no TTL.
 	Ttl *string `json:"ttl,omitempty"`
 }
+
+// StorageManifestState defines model for storage.ManifestState.
+type StorageManifestState string
 
 // StoragePublisher defines model for storage.Publisher.
 type StoragePublisher struct {
