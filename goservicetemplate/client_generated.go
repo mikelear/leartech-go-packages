@@ -13,16 +13,6 @@ import (
 	"strings"
 )
 
-const (
-	BearerAuthScopes = "BearerAuth.Scopes"
-)
-
-// HandlersExampleResponseDto defines model for handlers.ExampleResponseDto.
-type HandlersExampleResponseDto struct {
-	Message *string `json:"message,omitempty"`
-	Service *string `json:"service,omitempty"`
-}
-
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -96,26 +86,14 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetApiV1Example request
-	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthReady request
 	GetHealthReady(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-}
 
-func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1ExampleRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+	// PostLighthouseEvents request
+	PostLighthouseEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -142,31 +120,16 @@ func (c *Client) GetHealthReady(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-// NewGetApiV1ExampleRequest generates requests for GetApiV1Example
-func NewGetApiV1ExampleRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
+func (c *Client) PostLighthouseEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostLighthouseEventsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
-
-	operationPath := fmt.Sprintf("/api/v1/example")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
 // NewGetHealthLiveRequest generates requests for GetHealthLive
@@ -223,6 +186,33 @@ func NewGetHealthReadyRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewPostLighthouseEventsRequest generates requests for PostLighthouseEvents
+func NewPostLighthouseEventsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/lighthouse/events")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -266,37 +256,14 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetApiV1ExampleWithResponse request
-	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
-
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
 
 	// GetHealthReadyWithResponse request
 	GetHealthReadyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthReadyResponse, error)
-}
 
-type GetApiV1ExampleResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *HandlersExampleResponseDto
-	JSON401      *map[string]string
-}
-
-// Status returns HTTPResponse.Status
-func (r GetApiV1ExampleResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1ExampleResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
+	// PostLighthouseEventsWithResponse request
+	PostLighthouseEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostLighthouseEventsResponse, error)
 }
 
 type GetHealthLiveResponse struct {
@@ -341,13 +308,27 @@ func (r GetHealthReadyResponse) StatusCode() int {
 	return 0
 }
 
-// GetApiV1ExampleWithResponse request returning *GetApiV1ExampleResponse
-func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error) {
-	rsp, err := c.GetApiV1Example(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
+type PostLighthouseEventsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]string
+	JSON401      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostLighthouseEventsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
 	}
-	return ParseGetApiV1ExampleResponse(rsp)
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostLighthouseEventsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
@@ -368,37 +349,13 @@ func (c *ClientWithResponses) GetHealthReadyWithResponse(ctx context.Context, re
 	return ParseGetHealthReadyResponse(rsp)
 }
 
-// ParseGetApiV1ExampleResponse parses an HTTP response from a GetApiV1ExampleWithResponse call
-func ParseGetApiV1ExampleResponse(rsp *http.Response) (*GetApiV1ExampleResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+// PostLighthouseEventsWithResponse request returning *PostLighthouseEventsResponse
+func (c *ClientWithResponses) PostLighthouseEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostLighthouseEventsResponse, error) {
+	rsp, err := c.PostLighthouseEvents(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-
-	response := &GetApiV1ExampleResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HandlersExampleResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	}
-
-	return response, nil
+	return ParsePostLighthouseEventsResponse(rsp)
 }
 
 // ParseGetHealthLiveResponse parses an HTTP response from a GetHealthLiveWithResponse call
@@ -428,6 +385,39 @@ func ParseGetHealthReadyResponse(rsp *http.Response) (*GetHealthReadyResponse, e
 	response := &GetHealthReadyResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParsePostLighthouseEventsResponse parses an HTTP response from a PostLighthouseEventsWithResponse call
+func ParsePostLighthouseEventsResponse(rsp *http.Response) (*PostLighthouseEventsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostLighthouseEventsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
