@@ -13,6 +13,43 @@ type MockClientWithResponsesInterface struct {
 	mock.Mock
 }
 
+// GetApiV1ExampleWithResponse provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientWithResponsesInterface) GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetApiV1ExampleWithResponse")
+	}
+
+	var r0 *GetApiV1ExampleResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*GetApiV1ExampleResponse, error)); ok {
+		return rf(ctx, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *GetApiV1ExampleResponse); ok {
+		r0 = rf(ctx, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*GetApiV1ExampleResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetHealthLiveWithResponse provides a mock function with given fields: ctx, reqEditors
 func (_m *MockClientWithResponsesInterface) GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
@@ -75,43 +112,6 @@ func (_m *MockClientWithResponsesInterface) GetHealthReadyWithResponse(ctx conte
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*GetHealthReadyResponse)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostLighthouseEventsWithResponse provides a mock function with given fields: ctx, reqEditors
-func (_m *MockClientWithResponsesInterface) PostLighthouseEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostLighthouseEventsResponse, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostLighthouseEventsWithResponse")
-	}
-
-	var r0 *PostLighthouseEventsResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*PostLighthouseEventsResponse, error)); ok {
-		return rf(ctx, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *PostLighthouseEventsResponse); ok {
-		r0 = rf(ctx, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostLighthouseEventsResponse)
 		}
 	}
 
