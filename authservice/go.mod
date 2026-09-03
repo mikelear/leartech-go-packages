@@ -3,7 +3,7 @@ module github.com/mikelear/leartech-go-packages/authservice
 go 1.24.4
 
 require (
-	github.com/oapi-codegen/runtime v1.6.0
+	github.com/oapi-codegen/runtime v1.7.0
 	github.com/stretchr/testify v1.11.1
 )
 
