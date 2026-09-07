@@ -73,9 +73,15 @@ type ApiLeartechExt struct {
 
 // ApiModel defines model for api.Model.
 type ApiModel struct {
-	Id      *string `json:"id,omitempty"`
+	Id *string `json:"id,omitempty"`
+
+	// MaxCtx Capabilities/limits so callers can cap what they can't otherwise see
+	// (INTERFACES.md §4 "degrade visibly, never silently"). max_ctx is the model's
+	// context window; vision reports image-input support.
+	MaxCtx  *int    `json:"max_ctx,omitempty"`
 	Object  *string `json:"object,omitempty"`
 	OwnedBy *string `json:"owned_by,omitempty"`
+	Vision  *bool   `json:"vision,omitempty"`
 }
 
 // ApiModelsResponseDto defines model for api.ModelsResponseDto.
