@@ -14,21 +14,18 @@ import (
 	"strings"
 )
 
-// ApiAPIError defines model for api.APIError.
-type ApiAPIError struct {
-	Code    *string `json:"code,omitempty"`
-	Message *string `json:"message,omitempty"`
-	Type    *string `json:"type,omitempty"`
-}
-
 // ApiChatCompletionRequest defines model for api.ChatCompletionRequest.
 type ApiChatCompletionRequest struct {
-	MaxTokens   *int             `json:"max_tokens,omitempty"`
-	Messages    []ApiChatMessage `json:"messages"`
-	Model       string           `json:"model"`
-	Stream      *bool            `json:"stream,omitempty"`
-	Temperature *float32         `json:"temperature,omitempty"`
-	XLeartech   *ApiLeartechExt  `json:"x_leartech,omitempty"`
+	MaxTokens   *int                    `json:"max_tokens,omitempty"`
+	Messages    []ApiRequestMessage     `json:"messages"`
+	Model       string                  `json:"model"`
+	Stream      *bool                   `json:"stream,omitempty"`
+	Temperature *float32                `json:"temperature,omitempty"`
+	ToolChoice  *map[string]interface{} `json:"tool_choice,omitempty"`
+
+	// Tools S7b passthrough: forwarded verbatim to OpenAI-compatible providers.
+	Tools     *map[string]interface{} `json:"tools,omitempty"`
+	XLeartech *ApiLeartechExt         `json:"x_leartech,omitempty"`
 }
 
 // ApiChatCompletionResponseDto defines model for api.ChatCompletionResponseDto.
@@ -43,8 +40,9 @@ type ApiChatCompletionResponseDto struct {
 
 // ApiChatMessage defines model for api.ChatMessage.
 type ApiChatMessage struct {
-	Content *string `json:"content,omitempty"`
-	Role    *string `json:"role,omitempty"`
+	Content   *string                 `json:"content,omitempty"`
+	Role      *string                 `json:"role,omitempty"`
+	ToolCalls *map[string]interface{} `json:"tool_calls,omitempty"`
 }
 
 // ApiChoice defines model for api.Choice.
@@ -54,9 +52,16 @@ type ApiChoice struct {
 	Message      *ApiChatMessage `json:"message,omitempty"`
 }
 
+// ApiError defines model for api.Error.
+type ApiError struct {
+	Code    *string `json:"code,omitempty"`
+	Message *string `json:"message,omitempty"`
+	Type    *string `json:"type,omitempty"`
+}
+
 // ApiErrorResponseDto defines model for api.ErrorResponseDto.
 type ApiErrorResponseDto struct {
-	Error *ApiAPIError `json:"error,omitempty"`
+	Error *ApiError `json:"error,omitempty"`
 }
 
 // ApiLeartechExt defines model for api.LeartechExt.
@@ -79,11 +84,46 @@ type ApiModelsResponseDto struct {
 	Object *string     `json:"object,omitempty"`
 }
 
+// ApiRequestMessage defines model for api.RequestMessage.
+type ApiRequestMessage struct {
+	Content    *map[string]interface{} `json:"content,omitempty"`
+	Name       *string                 `json:"name,omitempty"`
+	Role       *string                 `json:"role,omitempty"`
+	ToolCallId *string                 `json:"tool_call_id,omitempty"`
+	ToolCalls  *map[string]interface{} `json:"tool_calls,omitempty"`
+}
+
 // ApiUsage defines model for api.Usage.
 type ApiUsage struct {
 	CompletionTokens *int `json:"completion_tokens,omitempty"`
 	PromptTokens     *int `json:"prompt_tokens,omitempty"`
 	TotalTokens      *int `json:"total_tokens,omitempty"`
+}
+
+// WebfetchResult defines model for webfetch.Result.
+type WebfetchResult struct {
+	Content     *string `json:"content,omitempty"`
+	ContentType *string `json:"content_type,omitempty"`
+	FinalUrl    *string `json:"final_url,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Truncated   *bool   `json:"truncated,omitempty"`
+	Url         *string `json:"url,omitempty"`
+}
+
+// WebsearchItem defines model for websearch.Item.
+type WebsearchItem struct {
+	Content *string  `json:"content,omitempty"`
+	Score   *float32 `json:"score,omitempty"`
+	Title   *string  `json:"title,omitempty"`
+	Url     *string  `json:"url,omitempty"`
+}
+
+// WebsearchResults defines model for websearch.Results.
+type WebsearchResults struct {
+	// Answer synthesized answer when the provider offers one (Tavily)
+	Answer   *string          `json:"answer,omitempty"`
+	Provider *string          `json:"provider,omitempty"`
+	Results  *[]WebsearchItem `json:"results,omitempty"`
 }
 
 // PostV1ChatCompletionsJSONRequestBody defines body for PostV1ChatCompletions for application/json ContentType.
@@ -170,8 +210,17 @@ type ClientInterface interface {
 	// PostV1Embeddings request
 	PostV1Embeddings(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostV1Fetch request
+	PostV1Fetch(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostV1Messages request
+	PostV1Messages(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetV1Models request
 	GetV1Models(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostV1Search request
+	PostV1Search(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) PostV1ChatCompletionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -210,8 +259,44 @@ func (c *Client) PostV1Embeddings(ctx context.Context, reqEditors ...RequestEdit
 	return c.Client.Do(req)
 }
 
+func (c *Client) PostV1Fetch(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1FetchRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostV1Messages(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1MessagesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetV1Models(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetV1ModelsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostV1Search(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1SearchRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -289,6 +374,60 @@ func NewPostV1EmbeddingsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewPostV1FetchRequest generates requests for PostV1Fetch
+func NewPostV1FetchRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/fetch")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostV1MessagesRequest generates requests for PostV1Messages
+func NewPostV1MessagesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/messages")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetV1ModelsRequest generates requests for GetV1Models
 func NewGetV1ModelsRequest(server string) (*http.Request, error) {
 	var err error
@@ -309,6 +448,33 @@ func NewGetV1ModelsRequest(server string) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostV1SearchRequest generates requests for PostV1Search
+func NewPostV1SearchRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/search")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -367,8 +533,17 @@ type ClientWithResponsesInterface interface {
 	// PostV1EmbeddingsWithResponse request
 	PostV1EmbeddingsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error)
 
+	// PostV1FetchWithResponse request
+	PostV1FetchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1FetchResponse, error)
+
+	// PostV1MessagesWithResponse request
+	PostV1MessagesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1MessagesResponse, error)
+
 	// GetV1ModelsWithResponse request
 	GetV1ModelsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV1ModelsResponse, error)
+
+	// PostV1SearchWithResponse request
+	PostV1SearchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1SearchResponse, error)
 }
 
 type PostV1ChatCompletionsResponse struct {
@@ -416,6 +591,48 @@ func (r PostV1EmbeddingsResponse) StatusCode() int {
 	return 0
 }
 
+type PostV1FetchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r PostV1FetchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostV1FetchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostV1MessagesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r PostV1MessagesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostV1MessagesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetV1ModelsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -432,6 +649,27 @@ func (r GetV1ModelsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetV1ModelsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostV1SearchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r PostV1SearchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostV1SearchResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -464,6 +702,24 @@ func (c *ClientWithResponses) PostV1EmbeddingsWithResponse(ctx context.Context, 
 	return ParsePostV1EmbeddingsResponse(rsp)
 }
 
+// PostV1FetchWithResponse request returning *PostV1FetchResponse
+func (c *ClientWithResponses) PostV1FetchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1FetchResponse, error) {
+	rsp, err := c.PostV1Fetch(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV1FetchResponse(rsp)
+}
+
+// PostV1MessagesWithResponse request returning *PostV1MessagesResponse
+func (c *ClientWithResponses) PostV1MessagesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1MessagesResponse, error) {
+	rsp, err := c.PostV1Messages(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV1MessagesResponse(rsp)
+}
+
 // GetV1ModelsWithResponse request returning *GetV1ModelsResponse
 func (c *ClientWithResponses) GetV1ModelsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV1ModelsResponse, error) {
 	rsp, err := c.GetV1Models(ctx, reqEditors...)
@@ -471,6 +727,15 @@ func (c *ClientWithResponses) GetV1ModelsWithResponse(ctx context.Context, reqEd
 		return nil, err
 	}
 	return ParseGetV1ModelsResponse(rsp)
+}
+
+// PostV1SearchWithResponse request returning *PostV1SearchResponse
+func (c *ClientWithResponses) PostV1SearchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1SearchResponse, error) {
+	rsp, err := c.PostV1Search(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV1SearchResponse(rsp)
 }
 
 // ParsePostV1ChatCompletionsResponse parses an HTTP response from a PostV1ChatCompletionsWithResponse call
@@ -529,6 +794,38 @@ func ParsePostV1EmbeddingsResponse(rsp *http.Response) (*PostV1EmbeddingsRespons
 	return response, nil
 }
 
+// ParsePostV1FetchResponse parses an HTTP response from a PostV1FetchWithResponse call
+func ParsePostV1FetchResponse(rsp *http.Response) (*PostV1FetchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostV1FetchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParsePostV1MessagesResponse parses an HTTP response from a PostV1MessagesWithResponse call
+func ParsePostV1MessagesResponse(rsp *http.Response) (*PostV1MessagesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostV1MessagesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // ParseGetV1ModelsResponse parses an HTTP response from a GetV1ModelsWithResponse call
 func ParseGetV1ModelsResponse(rsp *http.Response) (*GetV1ModelsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -550,6 +847,22 @@ func ParseGetV1ModelsResponse(rsp *http.Response) (*GetV1ModelsResponse, error) 
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParsePostV1SearchResponse parses an HTTP response from a PostV1SearchWithResponse call
+func ParsePostV1SearchResponse(rsp *http.Response) (*PostV1SearchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostV1SearchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
