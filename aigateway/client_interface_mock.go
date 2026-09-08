@@ -16,6 +16,117 @@ type MockClientInterface struct {
 	mock.Mock
 }
 
+// DeleteAdminV1KeysKeyid provides a mock function with given fields: ctx, keyid, reqEditors
+func (_m *MockClientInterface) DeleteAdminV1KeysKeyid(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, keyid)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteAdminV1KeysKeyid")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, keyid, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, keyid, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, keyid, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetAdminV1Keys provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) GetAdminV1Keys(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAdminV1Keys")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetAdminV1Usage provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) GetAdminV1Usage(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAdminV1Usage")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetV1Models provides a mock function with given fields: ctx, reqEditors
 func (_m *MockClientInterface) GetV1Models(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
@@ -46,6 +157,117 @@ func (_m *MockClientInterface) GetV1Models(ctx context.Context, reqEditors ...Re
 
 	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PostAdminV1Keys provides a mock function with given fields: ctx, body, reqEditors
+func (_m *MockClientInterface) PostAdminV1Keys(ctx context.Context, body ApiCreateKeyRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostAdminV1Keys")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ApiCreateKeyRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ApiCreateKeyRequest, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ApiCreateKeyRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PostAdminV1KeysKeyidRotate provides a mock function with given fields: ctx, keyid, reqEditors
+func (_m *MockClientInterface) PostAdminV1KeysKeyidRotate(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, keyid)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostAdminV1KeysKeyidRotate")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, keyid, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, keyid, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, keyid, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PostAdminV1KeysWithBody provides a mock function with given fields: ctx, contentType, body, reqEditors
+func (_m *MockClientInterface) PostAdminV1KeysWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostAdminV1KeysWithBody")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, contentType, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}

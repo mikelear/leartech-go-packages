@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/oapi-codegen/runtime"
 )
 
 // ApiChatCompletionRequest defines model for api.ChatCompletionRequest.
@@ -52,6 +54,23 @@ type ApiChoice struct {
 	Message      *ApiChatMessage `json:"message,omitempty"`
 }
 
+// ApiCreateKeyRequest defines model for api.CreateKeyRequest.
+type ApiCreateKeyRequest struct {
+	BudgetMicros   int       `json:"budget_micros"`
+	ExpiresAt      *string   `json:"expires_at,omitempty"`
+	ModelAllowlist *[]string `json:"model_allowlist,omitempty"`
+	Name           string    `json:"name"`
+	RateLimitRpm   *int      `json:"rate_limit_rpm,omitempty"`
+	Scopes         *[]string `json:"scopes,omitempty"`
+}
+
+// ApiCreateKeyResponseDto defines model for api.CreateKeyResponseDto.
+type ApiCreateKeyResponseDto struct {
+	Key    *ApiKeyView `json:"key,omitempty"`
+	Keyid  *string     `json:"keyid,omitempty"`
+	Secret *string     `json:"secret,omitempty"`
+}
+
 // ApiError defines model for api.Error.
 type ApiError struct {
 	Code    *string `json:"code,omitempty"`
@@ -69,6 +88,11 @@ type ApiLeartechExt struct {
 	RequireResidency *string `json:"require_residency,omitempty"`
 	RoutingHint      *string `json:"routing_hint,omitempty"`
 	TraceId          *string `json:"trace_id,omitempty"`
+}
+
+// ApiListKeysResponseDto defines model for api.ListKeysResponseDto.
+type ApiListKeysResponseDto struct {
+	Keys *[]ApiKeyView `json:"keys,omitempty"`
 }
 
 // ApiModel defines model for api.Model.
@@ -106,6 +130,37 @@ type ApiUsage struct {
 	TotalTokens      *int `json:"total_tokens,omitempty"`
 }
 
+// ApiUsageResponseDto defines model for api.UsageResponseDto.
+type ApiUsageResponseDto struct {
+	Rows  *[]StoreUsageRow `json:"rows,omitempty"`
+	Since *string          `json:"since,omitempty"`
+}
+
+// ApiKeyView defines model for api.keyView.
+type ApiKeyView struct {
+	BudgetMicros   *int      `json:"budget_micros,omitempty"`
+	CreatedAt      *string   `json:"created_at,omitempty"`
+	CreatedBy      *string   `json:"created_by,omitempty"`
+	ExpiresAt      *string   `json:"expires_at,omitempty"`
+	Keyid          *string   `json:"keyid,omitempty"`
+	LastUsedAt     *string   `json:"last_used_at,omitempty"`
+	ModelAllowlist *[]string `json:"model_allowlist,omitempty"`
+	Name           *string   `json:"name,omitempty"`
+	RateLimitRpm   *int      `json:"rate_limit_rpm,omitempty"`
+	RevokedAt      *string   `json:"revoked_at,omitempty"`
+	Scopes         *[]string `json:"scopes,omitempty"`
+}
+
+// StoreUsageRow defines model for store.UsageRow.
+type StoreUsageRow struct {
+	Calls            *int    `json:"calls,omitempty"`
+	CompletionTokens *int    `json:"completion_tokens,omitempty"`
+	CostMicros       *int    `json:"cost_micros,omitempty"`
+	Keyid            *string `json:"keyid,omitempty"`
+	Model            *string `json:"model,omitempty"`
+	PromptTokens     *int    `json:"prompt_tokens,omitempty"`
+}
+
 // WebfetchResult defines model for webfetch.Result.
 type WebfetchResult struct {
 	Content     *string `json:"content,omitempty"`
@@ -131,6 +186,9 @@ type WebsearchResults struct {
 	Provider *string          `json:"provider,omitempty"`
 	Results  *[]WebsearchItem `json:"results,omitempty"`
 }
+
+// PostAdminV1KeysJSONRequestBody defines body for PostAdminV1Keys for application/json ContentType.
+type PostAdminV1KeysJSONRequestBody = ApiCreateKeyRequest
 
 // PostV1ChatCompletionsJSONRequestBody defines body for PostV1ChatCompletions for application/json ContentType.
 type PostV1ChatCompletionsJSONRequestBody = ApiChatCompletionRequest
@@ -208,6 +266,23 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetAdminV1Keys request
+	GetAdminV1Keys(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostAdminV1KeysWithBody request with any body
+	PostAdminV1KeysWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostAdminV1Keys(ctx context.Context, body PostAdminV1KeysJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAdminV1KeysKeyid request
+	DeleteAdminV1KeysKeyid(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostAdminV1KeysKeyidRotate request
+	PostAdminV1KeysKeyidRotate(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAdminV1Usage request
+	GetAdminV1Usage(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostV1ChatCompletionsWithBody request with any body
 	PostV1ChatCompletionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -227,6 +302,78 @@ type ClientInterface interface {
 
 	// PostV1Search request
 	PostV1Search(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetAdminV1Keys(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminV1KeysRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostAdminV1KeysWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAdminV1KeysRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostAdminV1Keys(ctx context.Context, body PostAdminV1KeysJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAdminV1KeysRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteAdminV1KeysKeyid(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAdminV1KeysKeyidRequest(c.Server, keyid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostAdminV1KeysKeyidRotate(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAdminV1KeysKeyidRotateRequest(c.Server, keyid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAdminV1Usage(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminV1UsageRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) PostV1ChatCompletionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -311,6 +458,168 @@ func (c *Client) PostV1Search(ctx context.Context, reqEditors ...RequestEditorFn
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewGetAdminV1KeysRequest generates requests for GetAdminV1Keys
+func NewGetAdminV1KeysRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/v1/keys")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostAdminV1KeysRequest calls the generic PostAdminV1Keys builder with application/json body
+func NewPostAdminV1KeysRequest(server string, body PostAdminV1KeysJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostAdminV1KeysRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostAdminV1KeysRequestWithBody generates requests for PostAdminV1Keys with any type of body
+func NewPostAdminV1KeysRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/v1/keys")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteAdminV1KeysKeyidRequest generates requests for DeleteAdminV1KeysKeyid
+func NewDeleteAdminV1KeysKeyidRequest(server string, keyid string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyid", runtime.ParamLocationPath, keyid)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/v1/keys/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostAdminV1KeysKeyidRotateRequest generates requests for PostAdminV1KeysKeyidRotate
+func NewPostAdminV1KeysKeyidRotateRequest(server string, keyid string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyid", runtime.ParamLocationPath, keyid)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/v1/keys/%s/rotate", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAdminV1UsageRequest generates requests for GetAdminV1Usage
+func NewGetAdminV1UsageRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/v1/usage")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewPostV1ChatCompletionsRequest calls the generic PostV1ChatCompletions builder with application/json body
@@ -531,6 +840,23 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetAdminV1KeysWithResponse request
+	GetAdminV1KeysWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1KeysResponse, error)
+
+	// PostAdminV1KeysWithBodyWithResponse request with any body
+	PostAdminV1KeysWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostAdminV1KeysResponse, error)
+
+	PostAdminV1KeysWithResponse(ctx context.Context, body PostAdminV1KeysJSONRequestBody, reqEditors ...RequestEditorFn) (*PostAdminV1KeysResponse, error)
+
+	// DeleteAdminV1KeysKeyidWithResponse request
+	DeleteAdminV1KeysKeyidWithResponse(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*DeleteAdminV1KeysKeyidResponse, error)
+
+	// PostAdminV1KeysKeyidRotateWithResponse request
+	PostAdminV1KeysKeyidRotateWithResponse(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*PostAdminV1KeysKeyidRotateResponse, error)
+
+	// GetAdminV1UsageWithResponse request
+	GetAdminV1UsageWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1UsageResponse, error)
+
 	// PostV1ChatCompletionsWithBodyWithResponse request with any body
 	PostV1ChatCompletionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1ChatCompletionsResponse, error)
 
@@ -550,6 +876,123 @@ type ClientWithResponsesInterface interface {
 
 	// PostV1SearchWithResponse request
 	PostV1SearchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1SearchResponse, error)
+}
+
+type GetAdminV1KeysResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiListKeysResponseDto
+	JSON403      *ApiErrorResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminV1KeysResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminV1KeysResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostAdminV1KeysResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ApiCreateKeyResponseDto
+	JSON400      *ApiErrorResponseDto
+	JSON403      *ApiErrorResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r PostAdminV1KeysResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostAdminV1KeysResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteAdminV1KeysKeyidResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON403      *ApiErrorResponseDto
+	JSON404      *ApiErrorResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAdminV1KeysKeyidResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAdminV1KeysKeyidResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostAdminV1KeysKeyidRotateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiCreateKeyResponseDto
+	JSON403      *ApiErrorResponseDto
+	JSON404      *ApiErrorResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r PostAdminV1KeysKeyidRotateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostAdminV1KeysKeyidRotateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetAdminV1UsageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiUsageResponseDto
+	JSON403      *ApiErrorResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminV1UsageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminV1UsageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type PostV1ChatCompletionsResponse struct {
@@ -682,6 +1125,59 @@ func (r PostV1SearchResponse) StatusCode() int {
 	return 0
 }
 
+// GetAdminV1KeysWithResponse request returning *GetAdminV1KeysResponse
+func (c *ClientWithResponses) GetAdminV1KeysWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1KeysResponse, error) {
+	rsp, err := c.GetAdminV1Keys(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminV1KeysResponse(rsp)
+}
+
+// PostAdminV1KeysWithBodyWithResponse request with arbitrary body returning *PostAdminV1KeysResponse
+func (c *ClientWithResponses) PostAdminV1KeysWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostAdminV1KeysResponse, error) {
+	rsp, err := c.PostAdminV1KeysWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostAdminV1KeysResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostAdminV1KeysWithResponse(ctx context.Context, body PostAdminV1KeysJSONRequestBody, reqEditors ...RequestEditorFn) (*PostAdminV1KeysResponse, error) {
+	rsp, err := c.PostAdminV1Keys(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostAdminV1KeysResponse(rsp)
+}
+
+// DeleteAdminV1KeysKeyidWithResponse request returning *DeleteAdminV1KeysKeyidResponse
+func (c *ClientWithResponses) DeleteAdminV1KeysKeyidWithResponse(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*DeleteAdminV1KeysKeyidResponse, error) {
+	rsp, err := c.DeleteAdminV1KeysKeyid(ctx, keyid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAdminV1KeysKeyidResponse(rsp)
+}
+
+// PostAdminV1KeysKeyidRotateWithResponse request returning *PostAdminV1KeysKeyidRotateResponse
+func (c *ClientWithResponses) PostAdminV1KeysKeyidRotateWithResponse(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*PostAdminV1KeysKeyidRotateResponse, error) {
+	rsp, err := c.PostAdminV1KeysKeyidRotate(ctx, keyid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostAdminV1KeysKeyidRotateResponse(rsp)
+}
+
+// GetAdminV1UsageWithResponse request returning *GetAdminV1UsageResponse
+func (c *ClientWithResponses) GetAdminV1UsageWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1UsageResponse, error) {
+	rsp, err := c.GetAdminV1Usage(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminV1UsageResponse(rsp)
+}
+
 // PostV1ChatCompletionsWithBodyWithResponse request with arbitrary body returning *PostV1ChatCompletionsResponse
 func (c *ClientWithResponses) PostV1ChatCompletionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1ChatCompletionsResponse, error) {
 	rsp, err := c.PostV1ChatCompletionsWithBody(ctx, contentType, body, reqEditors...)
@@ -742,6 +1238,185 @@ func (c *ClientWithResponses) PostV1SearchWithResponse(ctx context.Context, reqE
 		return nil, err
 	}
 	return ParsePostV1SearchResponse(rsp)
+}
+
+// ParseGetAdminV1KeysResponse parses an HTTP response from a GetAdminV1KeysWithResponse call
+func ParseGetAdminV1KeysResponse(rsp *http.Response) (*GetAdminV1KeysResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminV1KeysResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiListKeysResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostAdminV1KeysResponse parses an HTTP response from a PostAdminV1KeysWithResponse call
+func ParsePostAdminV1KeysResponse(rsp *http.Response) (*PostAdminV1KeysResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostAdminV1KeysResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ApiCreateKeyResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAdminV1KeysKeyidResponse parses an HTTP response from a DeleteAdminV1KeysKeyidWithResponse call
+func ParseDeleteAdminV1KeysKeyidResponse(rsp *http.Response) (*DeleteAdminV1KeysKeyidResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAdminV1KeysKeyidResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostAdminV1KeysKeyidRotateResponse parses an HTTP response from a PostAdminV1KeysKeyidRotateWithResponse call
+func ParsePostAdminV1KeysKeyidRotateResponse(rsp *http.Response) (*PostAdminV1KeysKeyidRotateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostAdminV1KeysKeyidRotateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiCreateKeyResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminV1UsageResponse parses an HTTP response from a GetAdminV1UsageWithResponse call
+func ParseGetAdminV1UsageResponse(rsp *http.Response) (*GetAdminV1UsageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminV1UsageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiUsageResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParsePostV1ChatCompletionsResponse parses an HTTP response from a PostV1ChatCompletionsWithResponse call
