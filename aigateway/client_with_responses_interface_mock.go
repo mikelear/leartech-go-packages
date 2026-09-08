@@ -162,6 +162,80 @@ func (_m *MockClientWithResponsesInterface) GetV1ModelsWithResponse(ctx context.
 	return r0, r1
 }
 
+// PatchAdminV1KeysKeyidWithBodyWithResponse provides a mock function with given fields: ctx, keyid, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PatchAdminV1KeysKeyidWithBodyWithResponse(ctx context.Context, keyid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAdminV1KeysKeyidResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, keyid, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PatchAdminV1KeysKeyidWithBodyWithResponse")
+	}
+
+	var r0 *PatchAdminV1KeysKeyidResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*PatchAdminV1KeysKeyidResponse, error)); ok {
+		return rf(ctx, keyid, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *PatchAdminV1KeysKeyidResponse); ok {
+		r0 = rf(ctx, keyid, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*PatchAdminV1KeysKeyidResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, keyid, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PatchAdminV1KeysKeyidWithResponse provides a mock function with given fields: ctx, keyid, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PatchAdminV1KeysKeyidWithResponse(ctx context.Context, keyid string, body ApiAmendKeyRequest, reqEditors ...RequestEditorFn) (*PatchAdminV1KeysKeyidResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, keyid, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PatchAdminV1KeysKeyidWithResponse")
+	}
+
+	var r0 *PatchAdminV1KeysKeyidResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ApiAmendKeyRequest, ...RequestEditorFn) (*PatchAdminV1KeysKeyidResponse, error)); ok {
+		return rf(ctx, keyid, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ApiAmendKeyRequest, ...RequestEditorFn) *PatchAdminV1KeysKeyidResponse); ok {
+		r0 = rf(ctx, keyid, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*PatchAdminV1KeysKeyidResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ApiAmendKeyRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, keyid, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PostAdminV1KeysKeyidRotateWithResponse provides a mock function with given fields: ctx, keyid, reqEditors
 func (_m *MockClientWithResponsesInterface) PostAdminV1KeysKeyidRotateWithResponse(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*PostAdminV1KeysKeyidRotateResponse, error) {
 	_va := make([]interface{}, len(reqEditors))

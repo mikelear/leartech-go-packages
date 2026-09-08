@@ -16,6 +16,16 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// ApiAmendKeyRequest defines model for api.AmendKeyRequest.
+type ApiAmendKeyRequest struct {
+	BudgetMicros   *int      `json:"budget_micros,omitempty"`
+	ExpiresAt      *string   `json:"expires_at,omitempty"`
+	ModelAllowlist *[]string `json:"model_allowlist,omitempty"`
+	Name           *string   `json:"name,omitempty"`
+	RateLimitRpm   *int      `json:"rate_limit_rpm,omitempty"`
+	Scopes         *[]string `json:"scopes,omitempty"`
+}
+
 // ApiChatCompletionRequest defines model for api.ChatCompletionRequest.
 type ApiChatCompletionRequest struct {
 	MaxTokens   *int                    `json:"max_tokens,omitempty"`
@@ -190,6 +200,9 @@ type WebsearchResults struct {
 // PostAdminV1KeysJSONRequestBody defines body for PostAdminV1Keys for application/json ContentType.
 type PostAdminV1KeysJSONRequestBody = ApiCreateKeyRequest
 
+// PatchAdminV1KeysKeyidJSONRequestBody defines body for PatchAdminV1KeysKeyid for application/json ContentType.
+type PatchAdminV1KeysKeyidJSONRequestBody = ApiAmendKeyRequest
+
 // PostV1ChatCompletionsJSONRequestBody defines body for PostV1ChatCompletions for application/json ContentType.
 type PostV1ChatCompletionsJSONRequestBody = ApiChatCompletionRequest
 
@@ -277,6 +290,11 @@ type ClientInterface interface {
 	// DeleteAdminV1KeysKeyid request
 	DeleteAdminV1KeysKeyid(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PatchAdminV1KeysKeyidWithBody request with any body
+	PatchAdminV1KeysKeyidWithBody(ctx context.Context, keyid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchAdminV1KeysKeyid(ctx context.Context, keyid string, body PatchAdminV1KeysKeyidJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostAdminV1KeysKeyidRotate request
 	PostAdminV1KeysKeyidRotate(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -342,6 +360,30 @@ func (c *Client) PostAdminV1Keys(ctx context.Context, body PostAdminV1KeysJSONRe
 
 func (c *Client) DeleteAdminV1KeysKeyid(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteAdminV1KeysKeyidRequest(c.Server, keyid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchAdminV1KeysKeyidWithBody(ctx context.Context, keyid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchAdminV1KeysKeyidRequestWithBody(c.Server, keyid, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchAdminV1KeysKeyid(ctx context.Context, keyid string, body PatchAdminV1KeysKeyidJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchAdminV1KeysKeyidRequest(c.Server, keyid, body)
 	if err != nil {
 		return nil, err
 	}
@@ -557,6 +599,53 @@ func NewDeleteAdminV1KeysKeyidRequest(server string, keyid string) (*http.Reques
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewPatchAdminV1KeysKeyidRequest calls the generic PatchAdminV1KeysKeyid builder with application/json body
+func NewPatchAdminV1KeysKeyidRequest(server string, keyid string, body PatchAdminV1KeysKeyidJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchAdminV1KeysKeyidRequestWithBody(server, keyid, "application/json", bodyReader)
+}
+
+// NewPatchAdminV1KeysKeyidRequestWithBody generates requests for PatchAdminV1KeysKeyid with any type of body
+func NewPatchAdminV1KeysKeyidRequestWithBody(server string, keyid string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyid", runtime.ParamLocationPath, keyid)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/v1/keys/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -851,6 +940,11 @@ type ClientWithResponsesInterface interface {
 	// DeleteAdminV1KeysKeyidWithResponse request
 	DeleteAdminV1KeysKeyidWithResponse(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*DeleteAdminV1KeysKeyidResponse, error)
 
+	// PatchAdminV1KeysKeyidWithBodyWithResponse request with any body
+	PatchAdminV1KeysKeyidWithBodyWithResponse(ctx context.Context, keyid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAdminV1KeysKeyidResponse, error)
+
+	PatchAdminV1KeysKeyidWithResponse(ctx context.Context, keyid string, body PatchAdminV1KeysKeyidJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchAdminV1KeysKeyidResponse, error)
+
 	// PostAdminV1KeysKeyidRotateWithResponse request
 	PostAdminV1KeysKeyidRotateWithResponse(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*PostAdminV1KeysKeyidRotateResponse, error)
 
@@ -942,6 +1036,31 @@ func (r DeleteAdminV1KeysKeyidResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeleteAdminV1KeysKeyidResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PatchAdminV1KeysKeyidResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiListKeysResponseDto
+	JSON400      *ApiErrorResponseDto
+	JSON403      *ApiErrorResponseDto
+	JSON404      *ApiErrorResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchAdminV1KeysKeyidResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchAdminV1KeysKeyidResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1160,6 +1279,23 @@ func (c *ClientWithResponses) DeleteAdminV1KeysKeyidWithResponse(ctx context.Con
 	return ParseDeleteAdminV1KeysKeyidResponse(rsp)
 }
 
+// PatchAdminV1KeysKeyidWithBodyWithResponse request with arbitrary body returning *PatchAdminV1KeysKeyidResponse
+func (c *ClientWithResponses) PatchAdminV1KeysKeyidWithBodyWithResponse(ctx context.Context, keyid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAdminV1KeysKeyidResponse, error) {
+	rsp, err := c.PatchAdminV1KeysKeyidWithBody(ctx, keyid, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchAdminV1KeysKeyidResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchAdminV1KeysKeyidWithResponse(ctx context.Context, keyid string, body PatchAdminV1KeysKeyidJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchAdminV1KeysKeyidResponse, error) {
+	rsp, err := c.PatchAdminV1KeysKeyid(ctx, keyid, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchAdminV1KeysKeyidResponse(rsp)
+}
+
 // PostAdminV1KeysKeyidRotateWithResponse request returning *PostAdminV1KeysKeyidRotateResponse
 func (c *ClientWithResponses) PostAdminV1KeysKeyidRotateWithResponse(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*PostAdminV1KeysKeyidRotateResponse, error) {
 	rsp, err := c.PostAdminV1KeysKeyidRotate(ctx, keyid, reqEditors...)
@@ -1327,6 +1463,53 @@ func ParseDeleteAdminV1KeysKeyidResponse(rsp *http.Response) (*DeleteAdminV1Keys
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePatchAdminV1KeysKeyidResponse parses an HTTP response from a PatchAdminV1KeysKeyidWithResponse call
+func ParsePatchAdminV1KeysKeyidResponse(rsp *http.Response) (*PatchAdminV1KeysKeyidResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchAdminV1KeysKeyidResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiListKeysResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
 		var dest ApiErrorResponseDto
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
