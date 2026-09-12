@@ -22,199 +22,513 @@ const (
 	OAuth2ClientCredentialsScopes = "OAuth2ClientCredentials.Scopes"
 )
 
-// Defines values for StorageManifestState.
+// Defines values for DtoCreatePlanStepKind.
 const (
-	ManifestStateSealed   StorageManifestState = "sealed"
-	ManifestStateUnsealed StorageManifestState = "unsealed"
+	DtoCreatePlanStepKindApply DtoCreatePlanStepKind = "apply"
+	DtoCreatePlanStepKindCheck DtoCreatePlanStepKind = "check"
+	DtoCreatePlanStepKindPr    DtoCreatePlanStepKind = "pr"
 )
 
-// HandlersCreateRequest defines model for handlers.CreateRequest.
-type HandlersCreateRequest struct {
-	Files  []HandlersFileDecl `json:"files"`
-	Kind   string             `json:"kind"`
-	Label  string             `json:"label"`
-	Target *string            `json:"target,omitempty"`
-	Ttl    *string            `json:"ttl,omitempty"`
+// Defines values for DtoStepKind.
+const (
+	DtoStepKindApply DtoStepKind = "apply"
+	DtoStepKindCheck DtoStepKind = "check"
+	DtoStepKindPr    DtoStepKind = "pr"
+)
+
+// Defines values for DtoStepVerdict.
+const (
+	FAIL DtoStepVerdict = "FAIL"
+	PASS DtoStepVerdict = "PASS"
+)
+
+// Defines values for PreflightVerdict.
+const (
+	VerdictExists   PreflightVerdict = "exists"
+	VerdictNotFound PreflightVerdict = "not_found"
+	VerdictUnknown  PreflightVerdict = "unknown"
+)
+
+// DtoCheck defines model for dto.Check.
+type DtoCheck struct {
+	// Cluster Cluster is the cluster prefix parsed off the check name (gcp | az).
+	// Empty for cluster-agnostic checks (ai-review).
+	Cluster *string `json:"cluster,omitempty"`
+
+	// CompletedAt CompletedAt is when the check-run completed. Nil when still running.
+	CompletedAt *string `json:"completedAt,omitempty"`
+
+	// Conclusion Conclusion mirrors GitHub's check-run conclusion (may differ from
+	// state when the run is complete but conclusion is null). Empty when
+	// the check-run is still in progress.
+	Conclusion *string `json:"conclusion,omitempty"`
+
+	// DetailsUrl DetailsURL points at the check-run's log page (opaque to us).
+	DetailsUrl *string `json:"detailsUrl,omitempty"`
+
+	// DurationMs DurationMs is the derived duration in milliseconds. Nil when either
+	// timestamp is unknown — the UI renders "–" in that case.
+	DurationMs *int `json:"durationMs,omitempty"`
+
+	// History History is the list of prior attempts of this gate on this PR.
+	// Nil (not empty) when the adapter cannot supply history — the UI
+	// renders "–". A durable ResultsStoreAdapter populates this in the
+	// follow-up shape.
+	History *[]DtoHistoryEntry `json:"history,omitempty"`
+
+	// Name Name is the check-run name (e.g. "gcp/pr", "az/lint", "ai-review").
+	Name *string `json:"name,omitempty"`
+
+	// StartedAt StartedAt is when the check-run started. Nil when unknown.
+	StartedAt *string `json:"startedAt,omitempty"`
+
+	// State State is the gate's final state.
+	// One of: success | failure | pending | neutral | cancelled | skipped.
+	State *string `json:"state,omitempty"`
+
+	// Summary Summary is the human-readable summary line the CI wrote to the
+	// check-run. Empty for ai-review synthesis entries.
+	Summary *string `json:"summary,omitempty"`
 }
 
-// HandlersCreateResponseDto defines model for handlers.CreateResponseDto.
-type HandlersCreateResponseDto struct {
-	ExpiresAt  *string                  `json:"expiresAt,omitempty"`
-	Id         *string                  `json:"id,omitempty"`
-	Revision   *int                     `json:"revision,omitempty"`
-	UploadURL  *string                  `json:"uploadURL,omitempty"`
-	UploadURLs *[]HandlersSignedFileURL `json:"uploadURLs,omitempty"`
+// DtoCondition defines model for dto.Condition.
+type DtoCondition struct {
+	LastTransitionTime *string `json:"lastTransitionTime,omitempty"`
+	Message            *string `json:"message,omitempty"`
+	ObservedGeneration *int    `json:"observedGeneration,omitempty"`
+	Reason             *string `json:"reason,omitempty"`
+	Status             *string `json:"status,omitempty"`
+	Type               *string `json:"type,omitempty"`
 }
 
-// HandlersFileDecl defines model for handlers.FileDecl.
-type HandlersFileDecl struct {
-	// Bytes Bytes is the intended byte length.
-	Bytes *int `json:"bytes,omitempty"`
+// DtoCreatePlanRequest defines model for dto.CreatePlanRequest.
+type DtoCreatePlanRequest struct {
+	// Name Name is the Plan.metadata.name. Required. Must be a DNS-1123 subdomain
+	// (validated: no uppercase, dots limited, ≤253 chars).
+	Name string `json:"name"`
 
-	// Path Path is relative to artifact/<guid>/<revision>/. Leading "/",
-	// "..", and the reserved name "manifest.json" are rejected —
-	// the storage layer's FileObject validator does this.
-	Path string `json:"path"`
+	// Steps Steps declares the DAG. At least one step is required.
+	Steps []DtoCreatePlanStep `json:"steps"`
 
-	// Sha256 SHA256 is the expected lowercase hex digest — persisted on
-	// finalize so consumers can integrity-check downloads.
-	Sha256 *string `json:"sha256,omitempty"`
+	// Tenant Tenant is the tenant identity carried into each step's AgentRun. Empty
+	// when the Plan carries no tenant scoping.
+	Tenant *string `json:"tenant,omitempty"`
 }
 
-// HandlersFinalizeRequest defines model for handlers.FinalizeRequest.
-type HandlersFinalizeRequest struct {
-	// Producer Producer is an optional per-revision override for the sealed
-	// manifest's Producer field. Empty leaves whatever the unsealed
-	// manifest carried (typically empty at create; a CI system that
-	// wants to record its identity can set this at finalize).
-	Producer *string `json:"producer,omitempty"`
+// DtoCreatePlanStep defines model for dto.CreatePlanStep.
+type DtoCreatePlanStep struct {
+	// AgentType AgentType names the AgentType CR the step's AgentRun runs on. Required
+	// for Kind="pr" (or empty Kind, which coerces to "pr"); MUST be empty for
+	// Kind="apply" / Kind="check" (the controller expands Use/With; no
+	// AgentRun is spawned).
+	AgentType *string `json:"agentType,omitempty"`
 
-	// Revision Revision is the revision to seal. Matched against the unsealed
-	// manifest at artifact/<guid>/<revision>/manifest.json; 404 when
-	// absent (unknown / never-created), 409 when already sealed.
-	Revision int `json:"revision"`
-}
+	// BudgetIter BudgetIter caps AgentRun iterations for this step. When nil, the
+	// AgentType default applies.
+	BudgetIter *int `json:"budgetIter,omitempty"`
 
-// HandlersGetResponseDto defines model for handlers.GetResponseDto.
-type HandlersGetResponseDto struct {
-	DownloadURLs *[]HandlersSignedFileURL `json:"downloadURLs,omitempty"`
-	Manifest     *StorageManifest         `json:"manifest,omitempty"`
-}
+	// DependsOn DependsOn lists step Names this step waits on. Empty = ready at t=0.
+	// Each entry MUST reference a step declared earlier in the same request.
+	// Cycles are rejected at admission.
+	DependsOn *[]string `json:"dependsOn,omitempty"`
 
-// HandlersListResponseDto defines model for handlers.ListResponseDto.
-type HandlersListResponseDto struct {
-	Artifacts *[]StorageManifest `json:"artifacts,omitempty"`
-}
+	// FanIn FanIn marks the step as a no-agent read-only validation. Optional.
+	FanIn *bool `json:"fanIn,omitempty"`
 
-// HandlersSignedFileURL defines model for handlers.SignedFileURL.
-type HandlersSignedFileURL struct {
-	ExpiresAt *string `json:"expiresAt,omitempty"`
-	Method    *string `json:"method,omitempty"`
-	Path      *string `json:"path,omitempty"`
-	Url       *string `json:"url,omitempty"`
-}
+	// FanInValidate FanInValidate lists repo-relative file paths the fan-in step asserts
+	// exist on the target repo's main HEAD. Required (non-empty) when
+	// fanIn=true; MUST be empty otherwise.
+	FanInValidate *[]string `json:"fanInValidate,omitempty"`
 
-// HandlersErrorBody defines model for handlers.errorBody.
-type HandlersErrorBody struct {
-	Error *string `json:"error,omitempty"`
-}
+	// Hold Hold, when true, marks the step's PR deliberately held pending human
+	// approval. Optional; defaults false.
+	Hold *bool `json:"hold,omitempty"`
 
-// StorageFile defines model for storage.File.
-type StorageFile struct {
-	// Bytes Bytes is the object's size in bytes.
-	Bytes *int `json:"bytes,omitempty"`
-
-	// Path Path is the file's path within the revision, relative to
-	// artifact/<guid>/<revision>/. Leading slashes are stripped.
-	// Must not equal "manifest.json" — that key is reserved.
-	Path *string `json:"path,omitempty"`
-
-	// Sha256 SHA256 is the lowercase hex-encoded SHA-256 digest of the
-	// object's contents. Consumers verify downloads against this.
-	Sha256 *string `json:"sha256,omitempty"`
-}
-
-// StorageManifest defines model for storage.Manifest.
-type StorageManifest struct {
-	// Files Files enumerates the objects in the revision, each with its
-	// byte length and SHA-256 digest so consumers can integrity-
-	// check downloads.
+	// Inputs Inputs is the run payload projected into the child AgentRun. Validated
+	// against AgentType.spec.inputSchema — arbitrary JSON up to that schema.
+	// swaggertype:object gives generated clients a free-form object shape
+	// (matching the CRD's runtime.RawExtension) since json.RawMessage isn't
+	// a schema swagger can express as-is.
 	//
-	// Interpretation depends on State:
-	//   - Unsealed: entries are DECLARATIONS from the caller (Bytes /
-	//     SHA256 may be zero / empty when the caller didn't declare).
-	//     No files have been observed in storage yet.
-	//   - Sealed: entries are OBSERVATIONS (Bytes / SHA256 computed
-	//     against the uploaded objects at seal time). Consumers verify
-	//     downloads against these values.
-	Files *[]StorageFile `json:"files,omitempty"`
+	// Required for Kind="pr" (the AgentRun run payload); ignored for
+	// Kind="apply" / Kind="check" (they use With instead).
+	Inputs *map[string]interface{} `json:"inputs,omitempty"`
 
-	// Id ID is the artifact GUID (RFC 4122). Stable across revisions.
-	Id *string `json:"id,omitempty"`
+	// Kind Kind discriminates the step shape:
+	//
+	//   - "pr"    — agent-driven "open a PR" (the default; empty coerces
+	//               here at admission so pre-Kind callers keep working).
+	//               Requires AgentType.
+	//   - "apply" — controller-side templated apply; requires Use, may
+	//               carry With as opaque args. AgentType is ignored.
+	//   - "check" — controller-side read-only validation; the controller
+	//               populates PlanStepStatus.Verdict (PASS|FAIL) once the
+	//               check has run. Requires Use, may carry With.
+	//               AgentType is ignored.
+	//
+	// Plan-api VALIDATES the enum but does NOT expand Use/With — the
+	// controller owns the templated-step catalog. Storing them
+	// unexpanded lets the controller evolve its catalog without a
+	// plan-api schema bump.
+	// +kubebuilder:validation:Enum=pr;apply;check
+	Kind *DtoCreatePlanStepKind `json:"kind,omitempty"`
 
-	// Kind Kind is the artifact kind (free-form string, e.g. "markdown",
-	// "template", "dataset"). Consumers may filter on kind.
-	Kind *string `json:"kind,omitempty"`
+	// Name Name uniquely identifies the step within this Plan. Required.
+	// Validated: DNS-1123 label (no uppercase, ≤63 chars).
+	Name string `json:"name"`
 
-	// Label Label is the human-facing discovery key. Multiple artifacts may
-	// share a label (e.g. "coding-standards.md") — the GUID
-	// disambiguates. Immutable per revision but MAY differ between
-	// revisions (a label rename is a new revision, not a mutation).
-	Label *string `json:"label,omitempty"`
+	// Repo Repo, when set, is the target repo the AgentRun clones and works on.
+	Repo *string `json:"repo,omitempty"`
 
-	// Producer Producer identifies what minted THIS revision (agent id, CI
-	// system, human). PER REVISION — a subsequent revision may have
-	// a different producer (a human amendment to an agent-authored
-	// artifact, say).
-	Producer *string `json:"producer,omitempty"`
+	// Use Use is the templated-step reference the controller expands for
+	// Kind="apply" / Kind="check". Opaque to plan-api — a short string
+	// naming a template in the controller's registry (e.g. "helmfile-apply",
+	// "http-probe"). Ignored for Kind="pr".
+	Use *string `json:"use,omitempty"`
 
-	// PublishedBy PublishedBy carries the authenticated identity that requested
-	// the publish. `client` is typically the OAuth client-id;
-	// `subject` is the token's `sub` claim.
-	PublishedBy *StoragePublisher `json:"publishedBy,omitempty"`
+	// With With is the opaque args bag paired with Use to expand the templated
+	// step. Stored verbatim (raw JSON) so plan-api never has to know the
+	// arg shape of any given template. swaggertype:object gives generated
+	// clients a free-form object shape (matching runtime.RawExtension).
+	// Ignored for Kind="pr".
+	With *map[string]interface{} `json:"with,omitempty"`
+}
 
-	// Revision Revision is the monotonically-increasing revision number of
-	// this manifest under the artifact GUID. Starts at 1.
-	Revision *int `json:"revision,omitempty"`
+// DtoCreatePlanStepKind Kind discriminates the step shape:
+//
+//   - "pr"    — agent-driven "open a PR" (the default; empty coerces
+//     here at admission so pre-Kind callers keep working).
+//     Requires AgentType.
+//   - "apply" — controller-side templated apply; requires Use, may
+//     carry With as opaque args. AgentType is ignored.
+//   - "check" — controller-side read-only validation; the controller
+//     populates PlanStepStatus.Verdict (PASS|FAIL) once the
+//     check has run. Requires Use, may carry With.
+//     AgentType is ignored.
+//
+// Plan-api VALIDATES the enum but does NOT expand Use/With — the
+// controller owns the templated-step catalog. Storing them
+// unexpanded lets the controller evolve its catalog without a
+// plan-api schema bump.
+// +kubebuilder:validation:Enum=pr;apply;check
+type DtoCreatePlanStepKind string
 
-	// State State is the sealed/unsealed lifecycle marker. See the
-	// ManifestState constants for the semantics. Empty on manifests
-	// that predate the durability change; readers should treat the
-	// zero value as sealed for backward compatibility (matches the
-	// legacy "manifest present = revision finalized" invariant).
-	State *StorageManifestState `json:"state,omitempty"`
+// DtoDecision defines model for dto.Decision.
+type DtoDecision struct {
+	Message *string `json:"message,omitempty"`
+	Reason  *string `json:"reason,omitempty"`
+	Step    *string `json:"step,omitempty"`
+	Time    *string `json:"time,omitempty"`
+	Type    *string `json:"type,omitempty"`
+}
 
-	// Target Target optionally scopes the artifact (e.g. a repo, a service).
-	// Empty means unscoped / universally applicable.
-	Target *string `json:"target,omitempty"`
+// DtoGates defines model for dto.Gates.
+type DtoGates struct {
+	// Checks Checks is the per-gate result set — one entry per GitHub check-run,
+	// plus a synthesised "ai-review" entry if the adapter found an
+	// ai-review verdict in the PR comments.
+	Checks *[]DtoCheck `json:"checks,omitempty"`
 
-	// Tenant Tenant is the caller's tenant id, extracted from the token's
-	// ext.tenant_id claim at write time and PERSISTED in the manifest.
-	// It is the enforcement key for tenant isolation on reads: a GET
-	// for artifact X whose manifest.Tenant != caller.Tenant returns
-	// 404 (no existence leak). Empty tenant on the token → the
-	// caller is un-tenanted (service tokens without a tenant claim);
-	// such tokens can still author artifacts, and the manifest simply
-	// records an empty tenant. Un-tenanted callers can only see
-	// their own un-tenanted artifacts — same isolation rule, applied
-	// symmetrically.
+	// FetchedAt FetchedAt is when the gates were last fetched from the source.
+	FetchedAt *string `json:"fetchedAt,omitempty"`
+
+	// HeadSha HeadSHA is the SHA the gates apply to. Empty when unknown.
+	HeadSha *string `json:"headSha,omitempty"`
+
+	// Message Message is a human-readable diagnostic when the adapter degraded (e.g.
+	// "no GitHub token — check-runs unavailable"). Empty on the happy path.
+	Message *string `json:"message,omitempty"`
+
+	// Plan Plan is the plan the gates belong to (echoed for UX convenience).
+	Plan *string `json:"plan,omitempty"`
+
+	// Pr PR is the pull-request identifier the gates are attached to. Empty
+	// when the step has no PR yet (StepPhase=Pending/Running before agent
+	// opens one).
+	Pr *string `json:"pr,omitempty"`
+
+	// Repo Repo is the target repo (mikelear/X) whose check-runs were fetched.
+	Repo *string `json:"repo,omitempty"`
+
+	// Source Source names the adapter that produced these gates. Today: "github".
+	// Future: "results-store" for the durable adapter.
+	Source *string `json:"source,omitempty"`
+
+	// Step Step is the step within the plan.
+	Step *string `json:"step,omitempty"`
+}
+
+// DtoHistoryEntry defines model for dto.HistoryEntry.
+type DtoHistoryEntry struct {
+	CompletedAt *string `json:"completedAt,omitempty"`
+	Conclusion  *string `json:"conclusion,omitempty"`
+	DurationMs  *int    `json:"durationMs,omitempty"`
+	StartedAt   *string `json:"startedAt,omitempty"`
+	State       *string `json:"state,omitempty"`
+}
+
+// DtoPlan defines model for dto.Plan.
+type DtoPlan struct {
+	// CompletionTime CompletionTime is when the Plan reached a terminal phase. Nil while
+	// the plan is non-terminal.
+	CompletionTime *string `json:"completionTime,omitempty"`
+
+	// Conditions Conditions carries the plan-level state facts (Paused, Cancelled,
+	// CommandAcknowledged). Standard metav1.Condition shape.
+	Conditions *[]DtoCondition `json:"conditions,omitempty"`
+
+	// Decisions Decisions is the append-only audit log of transitions applied by the
+	// reconciler. Bounded — the reconciler caps at 100 entries.
+	Decisions *[]DtoDecision `json:"decisions,omitempty"`
+
+	// Message Message is a human-readable status detail (e.g. "cycle-detected",
+	// "remediation-loop-guard-cancelled"). Empty on the happy path.
+	Message *string `json:"message,omitempty"`
+
+	// Name Name is the Plan.metadata.name (also the URL key).
+	Name *string `json:"name,omitempty"`
+
+	// Paused Paused mirrors Plan.spec.paused — the plan-level HALT gate.
+	// When true, the reconciler MUST NOT spawn any AgentRun on this reconcile
+	// regardless of step readiness. Distinct from phase=Paused which is the
+	// observed state; this is the desired state.
+	Paused *bool `json:"paused,omitempty"`
+
+	// Phase Phase is the rolled-up plan lifecycle phase.
+	// One of: Pending | Running | Paused | Succeeded | Failed | Cancelled | Resolved.
+	Phase *string `json:"phase,omitempty"`
+
+	// StartTime StartTime is when the first step was spawned. Nil until at least one
+	// step reaches Running.
+	StartTime *string `json:"startTime,omitempty"`
+
+	// Steps Steps is the observed DAG — one entry per Plan.spec.steps entry,
+	// enriched with the child AgentRun's observed state.
+	Steps *[]DtoStep `json:"steps,omitempty"`
+
+	// Tenant Tenant is the tenant identity carried into each step's AgentRun.
+	// Empty when the Plan carries no tenant scoping.
 	Tenant *string `json:"tenant,omitempty"`
 
-	// Ttl TTL is the artifact's advisory time-to-live (RFC 3339 duration
-	// or timestamp — the field is a string, interpretation is the
-	// consumer's concern). Empty = no TTL.
-	Ttl *string `json:"ttl,omitempty"`
+	// TriggeredBy TriggeredBy records the origin of this Plan (user email | "agent" | "cron").
+	TriggeredBy *string `json:"triggeredBy,omitempty"`
 }
 
-// StorageManifestState defines model for storage.ManifestState.
-type StorageManifestState string
+// DtoStep defines model for dto.Step.
+type DtoStep struct {
+	// AgentPhase AgentPhase is the raw child AgentRun.status.phase — retained for
+	// backward-compat + debugging.
+	// One of: Pending | Queued | Running | Iterating | Succeeded | Failed | Cancelled.
+	AgentPhase *string `json:"agentPhase,omitempty"`
 
-// StoragePublisher defines model for storage.Publisher.
-type StoragePublisher struct {
-	Client  *string `json:"client,omitempty"`
-	Subject *string `json:"subject,omitempty"`
+	// AgentRunName AgentRunName is the deterministic name of the child AgentRun
+	// (<plan>-<step>); empty until the step is spawned.
+	AgentRunName *string `json:"agentRunName,omitempty"`
+
+	// AgentType AgentType names the AgentType CR the step's AgentRun runs on
+	// (per-language runtime — leartech-agent-{py,go,ng,rust}). Empty for
+	// Kind="apply" / Kind="check" (they spawn no AgentRun).
+	AgentType *string `json:"agentType,omitempty"`
+
+	// DependsOn DependsOn lists step Names this step waits on. A step is eligible only
+	// when every DependsOn step reaches StepPhase=Succeeded.
+	DependsOn *[]string `json:"dependsOn,omitempty"`
+
+	// FanIn FanIn marks the step as a no-agent, read-only fan-in validation
+	// (assert every path in FanInValidate exists on main HEAD).
+	FanIn *bool `json:"fanIn,omitempty"`
+
+	// HeadBranch HeadBranch is the source branch the PR was opened from, when known.
+	HeadBranch *string `json:"headBranch,omitempty"`
+
+	// Hold Hold marks the step's PR deliberately held pending human approval.
+	// When true the reconciler routes the step to
+	// StepPhase=AwaitingApproval once its agent opens a PR.
+	Hold *bool `json:"hold,omitempty"`
+
+	// Kind Kind is the step-shape discriminator: "pr" (agent-driven, the
+	// default), "apply" (controller-side templated apply), or "check"
+	// (controller-side read-only validation). Empty in the response is
+	// treated as "pr" — the mapper coalesces an unset Kind to "pr" so
+	// consumers never see the literal empty string.
+	Kind *DtoStepKind `json:"kind,omitempty"`
+
+	// Message Message is a short diagnostic set by the reconciler when the step
+	// transitions for a non-obvious reason. Empty on the happy path.
+	Message *string `json:"message,omitempty"`
+
+	// Name Name uniquely identifies the step within the Plan.
+	Name *string `json:"name,omitempty"`
+
+	// Pr PR is the pull-request identifier the AgentRun opened, as reported via
+	// AgentRun.status.targetPR. Empty until the agent reports one.
+	Pr *string `json:"pr,omitempty"`
+
+	// PrOutcome PROutcome is the last-observed PR outcome from the outcome fetcher.
+	// One of: opened | awaiting_review | merged | closed_unmerged.
+	PrOutcome *string `json:"prOutcome,omitempty"`
+
+	// Repo Repo is the target repo the AgentRun clones and works on. Empty when
+	// the step does not touch a repo (rare — smoke jobs).
+	Repo *string `json:"repo,omitempty"`
+
+	// RetryCount RetryCount is the number of times the reconciler has respawned this
+	// step's AgentRun after detecting the previous one went dead.
+	RetryCount *int `json:"retryCount,omitempty"`
+
+	// StepPhase StepPhase is the AUTHORITATIVE step-level lifecycle phase, factoring
+	// in PR outcome for repo-backed steps. One of:
+	//   Pending | Running | AwaitingReview | AwaitingApproval | Succeeded | Failed | Cancelled | Resolved
+	// dependsReady / plan roll-up key off StepPhase=Succeeded (PR merged),
+	// not Phase=Succeeded (agent finished).
+	StepPhase *string `json:"stepPhase,omitempty"`
+
+	// Use Use is the templated-step reference (e.g. "http-probe") the
+	// controller expands for Kind="apply" / Kind="check" steps. Empty
+	// for Kind="pr".
+	Use *string `json:"use,omitempty"`
+
+	// Verdict Verdict is the PASS / FAIL result the controller records for a
+	// Kind="check" step once its read-only validation has run. Empty for
+	// Kind="pr" (they use PROutcome + StepPhase instead) and Kind="apply"
+	// (they use StepPhase). Surfaced distinctly so a check-step outcome
+	// badge in the portal doesn't have to interpret Succeeded/Failed.
+	Verdict *DtoStepVerdict `json:"verdict,omitempty"`
+
+	// With With is the opaque args bag paired with Use to expand a templated
+	// step. Empty (nil) for Kind="pr". Surfaced verbatim (raw JSON) so
+	// the portal can render whatever the controller's template accepted.
+	With *map[string]interface{} `json:"with,omitempty"`
 }
 
-// GetApiV1ArtifactsParams defines parameters for GetApiV1Artifacts.
-type GetApiV1ArtifactsParams struct {
-	// Kind filter by manifest.kind
-	Kind *string `form:"kind,omitempty" json:"kind,omitempty"`
+// DtoStepKind Kind is the step-shape discriminator: "pr" (agent-driven, the
+// default), "apply" (controller-side templated apply), or "check"
+// (controller-side read-only validation). Empty in the response is
+// treated as "pr" — the mapper coalesces an unset Kind to "pr" so
+// consumers never see the literal empty string.
+type DtoStepKind string
 
-	// Label filter by manifest.label
-	Label *string `form:"label,omitempty" json:"label,omitempty"`
+// DtoStepVerdict Verdict is the PASS / FAIL result the controller records for a
+// Kind="check" step once its read-only validation has run. Empty for
+// Kind="pr" (they use PROutcome + StepPhase instead) and Kind="apply"
+// (they use StepPhase). Surfaced distinctly so a check-step outcome
+// badge in the portal doesn't have to interpret Succeeded/Failed.
+type DtoStepVerdict string
 
-	// Target filter by manifest.target
-	Target *string `form:"target,omitempty" json:"target,omitempty"`
+// PreflightBranchCheck defines model for preflight.BranchCheck.
+type PreflightBranchCheck struct {
+	// Available Available is true when the branch does NOT yet exist on origin
+	// (the agent's first push will create it — the happy path).
+	// False when the branch already exists (a non-fast-forward
+	// collision on first push is likely).
+	//
+	// Available carries the Verdict==NotFound outcome directly; when
+	// Verdict==Unknown, Available is false (safe-closed) but the
+	// caller should treat it as "we don't know", NOT as "already
+	// exists" — read Verdict to disambiguate.
+	Available *bool `json:"available,omitempty"`
+
+	// Branch Branch is the head branch the agent intends to push to.
+	Branch *string `json:"branch,omitempty"`
+
+	// ConflictsWithOpenPr ConflictsWithOpenPR carries a PR number when the branch is
+	// currently the head of an OPEN pull request. Surfaced so an
+	// operator can decide between /hold cancel and gh pr close.
+	ConflictsWithOpenPr *int `json:"conflictsWithOpenPr,omitempty"`
+
+	// Error Error is a short human-readable detail when Verdict==Unknown.
+	Error *string `json:"error,omitempty"`
+
+	// Repo Repo is the owner/name string.
+	Repo *string `json:"repo,omitempty"`
+
+	// Verdict Verdict mirrors [RepoCheck.Verdict] semantics — exists means
+	// the branch is taken, not_found means it is free, unknown means
+	// the probe could not answer.
+	Verdict *PreflightVerdict `json:"verdict,omitempty"`
 }
 
-// PostApiV1ArtifactsJSONRequestBody defines body for PostApiV1Artifacts for application/json ContentType.
-type PostApiV1ArtifactsJSONRequestBody = HandlersCreateRequest
+// PreflightCatalogCheck defines model for preflight.CatalogCheck.
+type PreflightCatalogCheck struct {
+	// AgentType AgentType is the declared agentType on that step. Empty when
+	// the step declares none (e.g. an ``apply``/``check`` step) — we
+	// still emit a row so the caller can see we visited it.
+	AgentType *string `json:"agentType,omitempty"`
 
-// PostApiV1ArtifactsIdFinalizeJSONRequestBody defines body for PostApiV1ArtifactsIdFinalize for application/json ContentType.
-type PostApiV1ArtifactsIdFinalizeJSONRequestBody = HandlersFinalizeRequest
+	// InCatalog InCatalog is true when AgentType is a known catalog entry.
+	// False when the catalog source reports it as absent OR when the
+	// catalog itself was unreachable — the accompanying
+	// blocking_issue distinguishes the two.
+	InCatalog *bool `json:"inCatalog,omitempty"`
 
-// PostApiV1ArtifactsIdRevisionsJSONRequestBody defines body for PostApiV1ArtifactsIdRevisions for application/json ContentType.
-type PostApiV1ArtifactsIdRevisionsJSONRequestBody = HandlersCreateRequest
+	// Step Step is the plan-step name (unique within the plan) whose
+	// agentType was checked.
+	Step *string `json:"step,omitempty"`
+}
+
+// PreflightParallelismCheck defines model for preflight.ParallelismCheck.
+type PreflightParallelismCheck struct {
+	// Ok OK is true when at most one sibling targets Repo. False when
+	// two-or-more do — that's the race the check exists to catch.
+	Ok *bool `json:"ok,omitempty"`
+
+	// Repo Repo is the target repo.
+	Repo *string `json:"repo,omitempty"`
+
+	// Steps Steps is the sorted list of sibling step names targeting Repo.
+	Steps *[]string `json:"steps,omitempty"`
+}
+
+// PreflightRepoCheck defines model for preflight.RepoCheck.
+type PreflightRepoCheck struct {
+	// DefaultBranch DefaultBranch is what origin calls the default branch, so the
+	// caller can spot a mismatch (e.g. plan says "main", origin says
+	// "master"). Populated only when Verdict==Exists.
+	DefaultBranch *string `json:"defaultBranch,omitempty"`
+
+	// Error Error is a short human-readable detail when Verdict==Unknown
+	// (transport / 5xx / config_missing). Empty otherwise.
+	Error *string `json:"error,omitempty"`
+
+	// Repo Repo is the owner/name string as declared on the step.
+	Repo *string `json:"repo,omitempty"`
+
+	// Verdict Verdict discriminates exists / not_found / unknown. Callers use
+	// this — NOT ``Exists`` — when deciding whether to block; see
+	// package doc for the rationale.
+	Verdict *PreflightVerdict `json:"verdict,omitempty"`
+}
+
+// PreflightVerdict defines model for preflight.Verdict.
+type PreflightVerdict string
+
+// PreflightVerifyChecks defines model for preflight.VerifyChecks.
+type PreflightVerifyChecks struct {
+	Branches            *[]PreflightBranchCheck      `json:"branches,omitempty"`
+	Catalog             *[]PreflightCatalogCheck     `json:"catalog,omitempty"`
+	Repos               *[]PreflightRepoCheck        `json:"repos,omitempty"`
+	SameRepoParallelism *[]PreflightParallelismCheck `json:"sameRepoParallelism,omitempty"`
+}
+
+// PreflightVerifyResult defines model for preflight.VerifyResult.
+type PreflightVerifyResult struct {
+	// BlockingIssues BlockingIssues is the flat list of human-readable issues,
+	// ordered by check (catalog → repos → branches → parallelism).
+	// Empty when OK==true.
+	BlockingIssues *[]string `json:"blockingIssues,omitempty"`
+
+	// Checks Checks is the structured per-check breakdown.
+	Checks *PreflightVerifyChecks `json:"checks,omitempty"`
+
+	// Ok OK is false whenever any blocking issue was surfaced.
+	Ok *bool `json:"ok,omitempty"`
+}
+
+// PostPlansJSONRequestBody defines body for PostPlans for application/json ContentType.
+type PostPlansJSONRequestBody = DtoCreatePlanRequest
+
+// PostPlansPreflightJSONRequestBody defines body for PostPlansPreflight for application/json ContentType.
+type PostPlansPreflightJSONRequestBody = DtoCreatePlanRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -289,128 +603,30 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetApiV1Artifacts request
-	GetApiV1Artifacts(ctx context.Context, params *GetApiV1ArtifactsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostApiV1ArtifactsWithBody request with any body
-	PostApiV1ArtifactsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostApiV1Artifacts(ctx context.Context, body PostApiV1ArtifactsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetApiV1ArtifactsId request
-	GetApiV1ArtifactsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostApiV1ArtifactsIdFinalizeWithBody request with any body
-	PostApiV1ArtifactsIdFinalizeWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostApiV1ArtifactsIdFinalize(ctx context.Context, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostApiV1ArtifactsIdRevisionsWithBody request with any body
-	PostApiV1ArtifactsIdRevisionsWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostApiV1ArtifactsIdRevisions(ctx context.Context, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthReady request
 	GetHealthReady(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-}
 
-func (c *Client) GetApiV1Artifacts(ctx context.Context, params *GetApiV1ArtifactsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1ArtifactsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	// GetPlans request
+	GetPlans(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) PostApiV1ArtifactsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1ArtifactsRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	// PostPlansWithBody request with any body
+	PostPlansWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) PostApiV1Artifacts(ctx context.Context, body PostApiV1ArtifactsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1ArtifactsRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	PostPlans(ctx context.Context, body PostPlansJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) GetApiV1ArtifactsId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1ArtifactsIdRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	// PostPlansPreflightWithBody request with any body
+	PostPlansPreflightWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) PostApiV1ArtifactsIdFinalizeWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1ArtifactsIdFinalizeRequestWithBody(c.Server, id, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	PostPlansPreflight(ctx context.Context, body PostPlansPreflightJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) PostApiV1ArtifactsIdFinalize(ctx context.Context, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1ArtifactsIdFinalizeRequest(c.Server, id, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	// GetPlansName request
+	GetPlansName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) PostApiV1ArtifactsIdRevisionsWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1ArtifactsIdRevisionsRequestWithBody(c.Server, id, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostApiV1ArtifactsIdRevisions(ctx context.Context, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1ArtifactsIdRevisionsRequest(c.Server, id, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+	// GetPlansNameStepsStepGates request
+	GetPlansNameStepsStepGates(ctx context.Context, name string, step string, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -437,253 +653,88 @@ func (c *Client) GetHealthReady(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-// NewGetApiV1ArtifactsRequest generates requests for GetApiV1Artifacts
-func NewGetApiV1ArtifactsRequest(server string, params *GetApiV1ArtifactsParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
+func (c *Client) GetPlans(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPlansRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
-
-	operationPath := fmt.Sprintf("/api/v1/artifacts")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if params.Kind != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "kind", runtime.ParamLocationQuery, *params.Kind); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.Label != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "label", runtime.ParamLocationQuery, *params.Label); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.Target != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "target", runtime.ParamLocationQuery, *params.Target); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
-// NewPostApiV1ArtifactsRequest calls the generic PostApiV1Artifacts builder with application/json body
-func NewPostApiV1ArtifactsRequest(server string, body PostApiV1ArtifactsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
+func (c *Client) PostPlansWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPlansRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1ArtifactsRequestWithBody(server, "application/json", bodyReader)
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
-// NewPostApiV1ArtifactsRequestWithBody generates requests for PostApiV1Artifacts with any type of body
-func NewPostApiV1ArtifactsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
+func (c *Client) PostPlans(ctx context.Context, body PostPlansJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPlansRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
-
-	operationPath := fmt.Sprintf("/api/v1/artifacts")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
-// NewGetApiV1ArtifactsIdRequest generates requests for GetApiV1ArtifactsId
-func NewGetApiV1ArtifactsIdRequest(server string, id string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+func (c *Client) PostPlansPreflightWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPlansPreflightRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	operationPath := fmt.Sprintf("/api/v1/artifacts/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
-// NewPostApiV1ArtifactsIdFinalizeRequest calls the generic PostApiV1ArtifactsIdFinalize builder with application/json body
-func NewPostApiV1ArtifactsIdFinalizeRequest(server string, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
+func (c *Client) PostPlansPreflight(ctx context.Context, body PostPlansPreflightJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPlansPreflightRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1ArtifactsIdFinalizeRequestWithBody(server, id, "application/json", bodyReader)
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
-// NewPostApiV1ArtifactsIdFinalizeRequestWithBody generates requests for PostApiV1ArtifactsIdFinalize with any type of body
-func NewPostApiV1ArtifactsIdFinalizeRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+func (c *Client) GetPlansName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPlansNameRequest(c.Server, name)
 	if err != nil {
 		return nil, err
 	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	operationPath := fmt.Sprintf("/api/v1/artifacts/%s/finalize", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
-// NewPostApiV1ArtifactsIdRevisionsRequest calls the generic PostApiV1ArtifactsIdRevisions builder with application/json body
-func NewPostApiV1ArtifactsIdRevisionsRequest(server string, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
+func (c *Client) GetPlansNameStepsStepGates(ctx context.Context, name string, step string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPlansNameStepsStepGatesRequest(c.Server, name, step)
 	if err != nil {
 		return nil, err
 	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1ArtifactsIdRevisionsRequestWithBody(server, id, "application/json", bodyReader)
-}
-
-// NewPostApiV1ArtifactsIdRevisionsRequestWithBody generates requests for PostApiV1ArtifactsIdRevisions with any type of body
-func NewPostApiV1ArtifactsIdRevisionsRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/artifacts/%s/revisions", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
 // NewGetHealthLiveRequest generates requests for GetHealthLive
@@ -723,6 +774,188 @@ func NewGetHealthReadyRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/health/ready")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetPlansRequest generates requests for GetPlans
+func NewGetPlansRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/plans")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostPlansRequest calls the generic PostPlans builder with application/json body
+func NewPostPlansRequest(server string, body PostPlansJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostPlansRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostPlansRequestWithBody generates requests for PostPlans with any type of body
+func NewPostPlansRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/plans")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostPlansPreflightRequest calls the generic PostPlansPreflight builder with application/json body
+func NewPostPlansPreflightRequest(server string, body PostPlansPreflightJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostPlansPreflightRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostPlansPreflightRequestWithBody generates requests for PostPlansPreflight with any type of body
+func NewPostPlansPreflightRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/plans/preflight")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetPlansNameRequest generates requests for GetPlansName
+func NewGetPlansNameRequest(server string, name string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/plans/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetPlansNameStepsStepGatesRequest generates requests for GetPlansNameStepsStepGates
+func NewGetPlansNameStepsStepGatesRequest(server string, name string, step string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "step", runtime.ParamLocationPath, step)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/plans/%s/steps/%s/gates", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -783,159 +1016,30 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetApiV1ArtifactsWithResponse request
-	GetApiV1ArtifactsWithResponse(ctx context.Context, params *GetApiV1ArtifactsParams, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsResponse, error)
-
-	// PostApiV1ArtifactsWithBodyWithResponse request with any body
-	PostApiV1ArtifactsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error)
-
-	PostApiV1ArtifactsWithResponse(ctx context.Context, body PostApiV1ArtifactsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error)
-
-	// GetApiV1ArtifactsIdWithResponse request
-	GetApiV1ArtifactsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsIdResponse, error)
-
-	// PostApiV1ArtifactsIdFinalizeWithBodyWithResponse request with any body
-	PostApiV1ArtifactsIdFinalizeWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error)
-
-	PostApiV1ArtifactsIdFinalizeWithResponse(ctx context.Context, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error)
-
-	// PostApiV1ArtifactsIdRevisionsWithBodyWithResponse request with any body
-	PostApiV1ArtifactsIdRevisionsWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error)
-
-	PostApiV1ArtifactsIdRevisionsWithResponse(ctx context.Context, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error)
-
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
 
 	// GetHealthReadyWithResponse request
 	GetHealthReadyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthReadyResponse, error)
-}
 
-type GetApiV1ArtifactsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *HandlersListResponseDto
-	JSON401      *HandlersErrorBody
-	JSON403      *HandlersErrorBody
-}
+	// GetPlansWithResponse request
+	GetPlansWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetPlansResponse, error)
 
-// Status returns HTTPResponse.Status
-func (r GetApiV1ArtifactsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
+	// PostPlansWithBodyWithResponse request with any body
+	PostPlansWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansResponse, error)
 
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1ArtifactsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
+	PostPlansWithResponse(ctx context.Context, body PostPlansJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPlansResponse, error)
 
-type PostApiV1ArtifactsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *HandlersCreateResponseDto
-	JSON400      *HandlersErrorBody
-	JSON401      *HandlersErrorBody
-	JSON403      *HandlersErrorBody
-}
+	// PostPlansPreflightWithBodyWithResponse request with any body
+	PostPlansPreflightWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansPreflightResponse, error)
 
-// Status returns HTTPResponse.Status
-func (r PostApiV1ArtifactsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
+	PostPlansPreflightWithResponse(ctx context.Context, body PostPlansPreflightJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPlansPreflightResponse, error)
 
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1ArtifactsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
+	// GetPlansNameWithResponse request
+	GetPlansNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetPlansNameResponse, error)
 
-type GetApiV1ArtifactsIdResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *HandlersGetResponseDto
-	JSON401      *HandlersErrorBody
-	JSON403      *HandlersErrorBody
-	JSON404      *HandlersErrorBody
-}
-
-// Status returns HTTPResponse.Status
-func (r GetApiV1ArtifactsIdResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1ArtifactsIdResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostApiV1ArtifactsIdFinalizeResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *StorageManifest
-	JSON400      *HandlersErrorBody
-	JSON401      *HandlersErrorBody
-	JSON403      *HandlersErrorBody
-	JSON404      *HandlersErrorBody
-	JSON409      *HandlersErrorBody
-}
-
-// Status returns HTTPResponse.Status
-func (r PostApiV1ArtifactsIdFinalizeResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1ArtifactsIdFinalizeResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostApiV1ArtifactsIdRevisionsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *HandlersCreateResponseDto
-	JSON400      *HandlersErrorBody
-	JSON401      *HandlersErrorBody
-	JSON403      *HandlersErrorBody
-	JSON404      *HandlersErrorBody
-}
-
-// Status returns HTTPResponse.Status
-func (r PostApiV1ArtifactsIdRevisionsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1ArtifactsIdRevisionsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
+	// GetPlansNameStepsStepGatesWithResponse request
+	GetPlansNameStepsStepGatesWithResponse(ctx context.Context, name string, step string, reqEditors ...RequestEditorFn) (*GetPlansNameStepsStepGatesResponse, error)
 }
 
 type GetHealthLiveResponse struct {
@@ -980,73 +1084,134 @@ func (r GetHealthReadyResponse) StatusCode() int {
 	return 0
 }
 
-// GetApiV1ArtifactsWithResponse request returning *GetApiV1ArtifactsResponse
-func (c *ClientWithResponses) GetApiV1ArtifactsWithResponse(ctx context.Context, params *GetApiV1ArtifactsParams, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsResponse, error) {
-	rsp, err := c.GetApiV1Artifacts(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1ArtifactsResponse(rsp)
+type GetPlansResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]DtoPlan
+	JSON401      *map[string]string
+	JSON403      *map[string]string
+	JSON500      *map[string]string
 }
 
-// PostApiV1ArtifactsWithBodyWithResponse request with arbitrary body returning *PostApiV1ArtifactsResponse
-func (c *ClientWithResponses) PostApiV1ArtifactsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error) {
-	rsp, err := c.PostApiV1ArtifactsWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
+// Status returns HTTPResponse.Status
+func (r GetPlansResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
 	}
-	return ParsePostApiV1ArtifactsResponse(rsp)
+	return http.StatusText(0)
 }
 
-func (c *ClientWithResponses) PostApiV1ArtifactsWithResponse(ctx context.Context, body PostApiV1ArtifactsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error) {
-	rsp, err := c.PostApiV1Artifacts(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPlansResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
 	}
-	return ParsePostApiV1ArtifactsResponse(rsp)
+	return 0
 }
 
-// GetApiV1ArtifactsIdWithResponse request returning *GetApiV1ArtifactsIdResponse
-func (c *ClientWithResponses) GetApiV1ArtifactsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsIdResponse, error) {
-	rsp, err := c.GetApiV1ArtifactsId(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1ArtifactsIdResponse(rsp)
+type PostPlansResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *DtoPlan
+	JSON400      *map[string]interface{}
+	JSON401      *map[string]string
+	JSON403      *map[string]string
+	JSON409      *map[string]string
+	JSON500      *map[string]string
 }
 
-// PostApiV1ArtifactsIdFinalizeWithBodyWithResponse request with arbitrary body returning *PostApiV1ArtifactsIdFinalizeResponse
-func (c *ClientWithResponses) PostApiV1ArtifactsIdFinalizeWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error) {
-	rsp, err := c.PostApiV1ArtifactsIdFinalizeWithBody(ctx, id, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
+// Status returns HTTPResponse.Status
+func (r PostPlansResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
 	}
-	return ParsePostApiV1ArtifactsIdFinalizeResponse(rsp)
+	return http.StatusText(0)
 }
 
-func (c *ClientWithResponses) PostApiV1ArtifactsIdFinalizeWithResponse(ctx context.Context, id string, body PostApiV1ArtifactsIdFinalizeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error) {
-	rsp, err := c.PostApiV1ArtifactsIdFinalize(ctx, id, body, reqEditors...)
-	if err != nil {
-		return nil, err
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostPlansResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
 	}
-	return ParsePostApiV1ArtifactsIdFinalizeResponse(rsp)
+	return 0
 }
 
-// PostApiV1ArtifactsIdRevisionsWithBodyWithResponse request with arbitrary body returning *PostApiV1ArtifactsIdRevisionsResponse
-func (c *ClientWithResponses) PostApiV1ArtifactsIdRevisionsWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error) {
-	rsp, err := c.PostApiV1ArtifactsIdRevisionsWithBody(ctx, id, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostApiV1ArtifactsIdRevisionsResponse(rsp)
+type PostPlansPreflightResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PreflightVerifyResult
+	JSON400      *map[string]string
+	JSON401      *map[string]string
+	JSON403      *map[string]string
+	JSON500      *map[string]string
 }
 
-func (c *ClientWithResponses) PostApiV1ArtifactsIdRevisionsWithResponse(ctx context.Context, id string, body PostApiV1ArtifactsIdRevisionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error) {
-	rsp, err := c.PostApiV1ArtifactsIdRevisions(ctx, id, body, reqEditors...)
-	if err != nil {
-		return nil, err
+// Status returns HTTPResponse.Status
+func (r PostPlansPreflightResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
 	}
-	return ParsePostApiV1ArtifactsIdRevisionsResponse(rsp)
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostPlansPreflightResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPlansNameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DtoPlan
+	JSON401      *map[string]string
+	JSON403      *map[string]string
+	JSON404      *map[string]string
+	JSON500      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPlansNameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPlansNameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPlansNameStepsStepGatesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DtoGates
+	JSON401      *map[string]string
+	JSON403      *map[string]string
+	JSON404      *map[string]string
+	JSON500      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPlansNameStepsStepGatesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPlansNameStepsStepGatesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
@@ -1067,253 +1232,65 @@ func (c *ClientWithResponses) GetHealthReadyWithResponse(ctx context.Context, re
 	return ParseGetHealthReadyResponse(rsp)
 }
 
-// ParseGetApiV1ArtifactsResponse parses an HTTP response from a GetApiV1ArtifactsWithResponse call
-func ParseGetApiV1ArtifactsResponse(rsp *http.Response) (*GetApiV1ArtifactsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+// GetPlansWithResponse request returning *GetPlansResponse
+func (c *ClientWithResponses) GetPlansWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetPlansResponse, error) {
+	rsp, err := c.GetPlans(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-
-	response := &GetApiV1ArtifactsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HandlersListResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	}
-
-	return response, nil
+	return ParseGetPlansResponse(rsp)
 }
 
-// ParsePostApiV1ArtifactsResponse parses an HTTP response from a PostApiV1ArtifactsWithResponse call
-func ParsePostApiV1ArtifactsResponse(rsp *http.Response) (*PostApiV1ArtifactsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+// PostPlansWithBodyWithResponse request with arbitrary body returning *PostPlansResponse
+func (c *ClientWithResponses) PostPlansWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansResponse, error) {
+	rsp, err := c.PostPlansWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-
-	response := &PostApiV1ArtifactsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest HandlersCreateResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	}
-
-	return response, nil
+	return ParsePostPlansResponse(rsp)
 }
 
-// ParseGetApiV1ArtifactsIdResponse parses an HTTP response from a GetApiV1ArtifactsIdWithResponse call
-func ParseGetApiV1ArtifactsIdResponse(rsp *http.Response) (*GetApiV1ArtifactsIdResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+func (c *ClientWithResponses) PostPlansWithResponse(ctx context.Context, body PostPlansJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPlansResponse, error) {
+	rsp, err := c.PostPlans(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-
-	response := &GetApiV1ArtifactsIdResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HandlersGetResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
+	return ParsePostPlansResponse(rsp)
 }
 
-// ParsePostApiV1ArtifactsIdFinalizeResponse parses an HTTP response from a PostApiV1ArtifactsIdFinalizeWithResponse call
-func ParsePostApiV1ArtifactsIdFinalizeResponse(rsp *http.Response) (*PostApiV1ArtifactsIdFinalizeResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+// PostPlansPreflightWithBodyWithResponse request with arbitrary body returning *PostPlansPreflightResponse
+func (c *ClientWithResponses) PostPlansPreflightWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansPreflightResponse, error) {
+	rsp, err := c.PostPlansPreflightWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-
-	response := &PostApiV1ArtifactsIdFinalizeResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest StorageManifest
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON409 = &dest
-
-	}
-
-	return response, nil
+	return ParsePostPlansPreflightResponse(rsp)
 }
 
-// ParsePostApiV1ArtifactsIdRevisionsResponse parses an HTTP response from a PostApiV1ArtifactsIdRevisionsWithResponse call
-func ParsePostApiV1ArtifactsIdRevisionsResponse(rsp *http.Response) (*PostApiV1ArtifactsIdRevisionsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+func (c *ClientWithResponses) PostPlansPreflightWithResponse(ctx context.Context, body PostPlansPreflightJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPlansPreflightResponse, error) {
+	rsp, err := c.PostPlansPreflight(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
+	return ParsePostPlansPreflightResponse(rsp)
+}
 
-	response := &PostApiV1ArtifactsIdRevisionsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
+// GetPlansNameWithResponse request returning *GetPlansNameResponse
+func (c *ClientWithResponses) GetPlansNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetPlansNameResponse, error) {
+	rsp, err := c.GetPlansName(ctx, name, reqEditors...)
+	if err != nil {
+		return nil, err
 	}
+	return ParseGetPlansNameResponse(rsp)
+}
 
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest HandlersCreateResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest HandlersErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
+// GetPlansNameStepsStepGatesWithResponse request returning *GetPlansNameStepsStepGatesResponse
+func (c *ClientWithResponses) GetPlansNameStepsStepGatesWithResponse(ctx context.Context, name string, step string, reqEditors ...RequestEditorFn) (*GetPlansNameStepsStepGatesResponse, error) {
+	rsp, err := c.GetPlansNameStepsStepGates(ctx, name, step, reqEditors...)
+	if err != nil {
+		return nil, err
 	}
-
-	return response, nil
+	return ParseGetPlansNameStepsStepGatesResponse(rsp)
 }
 
 // ParseGetHealthLiveResponse parses an HTTP response from a GetHealthLiveWithResponse call
@@ -1343,6 +1320,276 @@ func ParseGetHealthReadyResponse(rsp *http.Response) (*GetHealthReadyResponse, e
 	response := &GetHealthReadyResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetPlansResponse parses an HTTP response from a GetPlansWithResponse call
+func ParseGetPlansResponse(rsp *http.Response) (*GetPlansResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPlansResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []DtoPlan
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostPlansResponse parses an HTTP response from a PostPlansWithResponse call
+func ParsePostPlansResponse(rsp *http.Response) (*PostPlansResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostPlansResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest DtoPlan
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostPlansPreflightResponse parses an HTTP response from a PostPlansPreflightWithResponse call
+func ParsePostPlansPreflightResponse(rsp *http.Response) (*PostPlansPreflightResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostPlansPreflightResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PreflightVerifyResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPlansNameResponse parses an HTTP response from a GetPlansNameWithResponse call
+func ParseGetPlansNameResponse(rsp *http.Response) (*GetPlansNameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPlansNameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DtoPlan
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPlansNameStepsStepGatesResponse parses an HTTP response from a GetPlansNameStepsStepGatesWithResponse call
+func ParseGetPlansNameStepsStepGatesResponse(rsp *http.Response) (*GetPlansNameStepsStepGatesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPlansNameStepsStepGatesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DtoGates
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
 	}
 
 	return response, nil
