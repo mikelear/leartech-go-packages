@@ -11,11 +11,30 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/oapi-codegen/runtime"
 )
 
 const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
+
+// HandlersClientBinary defines model for handlers.ClientBinary.
+type HandlersClientBinary struct {
+	Arch   *string `json:"arch,omitempty"`
+	Bytes  *int    `json:"bytes,omitempty"`
+	Name   *string `json:"name,omitempty"`
+	Os     *string `json:"os,omitempty"`
+	Sha256 *string `json:"sha256,omitempty"`
+	Url    *string `json:"url,omitempty"`
+}
+
+// HandlersClientsResponseDto defines model for handlers.ClientsResponseDto.
+type HandlersClientsResponseDto struct {
+	ChecksumsUrl *string                 `json:"checksums_url,omitempty"`
+	Clients      *[]HandlersClientBinary `json:"clients,omitempty"`
+	Version      *string                 `json:"version,omitempty"`
+}
 
 // HandlersExampleResponseDto defines model for handlers.ExampleResponseDto.
 type HandlersExampleResponseDto struct {
@@ -99,6 +118,12 @@ type ClientInterface interface {
 	// GetApiV1Example request
 	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetClients request
+	GetClients(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClientsName request
+	GetClientsName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -108,6 +133,30 @@ type ClientInterface interface {
 
 func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetApiV1ExampleRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClients(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClientsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClientsName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClientsNameRequest(c.Server, name)
 	if err != nil {
 		return nil, err
 	}
@@ -152,6 +201,67 @@ func NewGetApiV1ExampleRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/example")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClientsRequest generates requests for GetClients
+func NewGetClientsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clients")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClientsNameRequest generates requests for GetClientsName
+func NewGetClientsNameRequest(server string, name string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clients/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -269,6 +379,12 @@ type ClientWithResponsesInterface interface {
 	// GetApiV1ExampleWithResponse request
 	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
 
+	// GetClientsWithResponse request
+	GetClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetClientsResponse, error)
+
+	// GetClientsNameWithResponse request
+	GetClientsNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetClientsNameResponse, error)
+
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
 
@@ -293,6 +409,51 @@ func (r GetApiV1ExampleResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetApiV1ExampleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClientsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersClientsResponseDto
+	JSON401      *map[string]string
+	JSON501      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClientsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClientsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClientsNameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClientsNameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClientsNameResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -350,6 +511,24 @@ func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, r
 	return ParseGetApiV1ExampleResponse(rsp)
 }
 
+// GetClientsWithResponse request returning *GetClientsResponse
+func (c *ClientWithResponses) GetClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetClientsResponse, error) {
+	rsp, err := c.GetClients(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClientsResponse(rsp)
+}
+
+// GetClientsNameWithResponse request returning *GetClientsNameResponse
+func (c *ClientWithResponses) GetClientsNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetClientsNameResponse, error) {
+	rsp, err := c.GetClientsName(ctx, name, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClientsNameResponse(rsp)
+}
+
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
 func (c *ClientWithResponses) GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error) {
 	rsp, err := c.GetHealthLive(ctx, reqEditors...)
@@ -396,6 +575,62 @@ func ParseGetApiV1ExampleResponse(rsp *http.Response) (*GetApiV1ExampleResponse,
 		}
 		response.JSON401 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseGetClientsResponse parses an HTTP response from a GetClientsWithResponse call
+func ParseGetClientsResponse(rsp *http.Response) (*GetClientsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClientsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersClientsResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClientsNameResponse parses an HTTP response from a GetClientsNameWithResponse call
+func ParseGetClientsNameResponse(rsp *http.Response) (*GetClientsNameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClientsNameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
