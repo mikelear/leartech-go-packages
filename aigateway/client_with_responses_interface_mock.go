@@ -162,6 +162,43 @@ func (_m *MockClientWithResponsesInterface) GetV1ModelsWithResponse(ctx context.
 	return r0, r1
 }
 
+// GetVersionWithResponse provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientWithResponsesInterface) GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetVersionWithResponse")
+	}
+
+	var r0 *GetVersionResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*GetVersionResponse, error)); ok {
+		return rf(ctx, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *GetVersionResponse); ok {
+		r0 = rf(ctx, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*GetVersionResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PatchAdminV1KeysKeyidWithBodyWithResponse provides a mock function with given fields: ctx, keyid, contentType, body, reqEditors
 func (_m *MockClientWithResponsesInterface) PatchAdminV1KeysKeyidWithBodyWithResponse(ctx context.Context, keyid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAdminV1KeysKeyidResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
