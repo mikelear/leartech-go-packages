@@ -115,7 +115,24 @@ type ApiModel struct {
 	MaxCtx  *int    `json:"max_ctx,omitempty"`
 	Object  *string `json:"object,omitempty"`
 	OwnedBy *string `json:"owned_by,omitempty"`
-	Vision  *bool   `json:"vision,omitempty"`
+
+	// Provider Provider is the supplier that answers (anthropic, deepseek, ollama,
+	// azure-openai, litellm); ProviderModel is the concrete model it serves.
+	//
+	// The catalog is three levels -- supplier, logical alias,
+	// concrete model -- and this response published only the middle one. A
+	// caller could not tell that "claude" means claude-opus-4-8 via anthropic,
+	// nor that glm/codestral/mistral-large are one LiteLLM supplier rather than
+	// three. owned_by was the only hint and it is the constant "leartech" for
+	// every row, so it distinguished nothing.
+	//
+	// The reviewer already logs provider + model_served per call, so the
+	// distinction existed everywhere except here.
+	//
+	// source: model_catalog(logical_model, provider_model, adapter) -- migration 00001
+	Provider      *string `json:"provider,omitempty"`
+	ProviderModel *string `json:"provider_model,omitempty"`
+	Vision        *bool   `json:"vision,omitempty"`
 }
 
 // ApiModelsResponseDto defines model for api.ModelsResponseDto.
