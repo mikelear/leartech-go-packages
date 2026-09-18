@@ -113,16 +113,10 @@ type ApiListKeysResponseDto struct {
 
 // ApiModel defines model for api.Model.
 type ApiModel struct {
-	Id *string `json:"id,omitempty"`
+	Hosting *string `json:"hosting,omitempty"`
+	Id      *string `json:"id,omitempty"`
 
-	// MaxCtx Capabilities/limits so callers can cap what they can't otherwise see
-	// (INTERFACES.md §4 "degrade visibly, never silently"). max_ctx is the model's
-	// context window; vision reports image-input support.
-	MaxCtx  *int    `json:"max_ctx,omitempty"`
-	Object  *string `json:"object,omitempty"`
-	OwnedBy *string `json:"owned_by,omitempty"`
-
-	// Provider Provider is the supplier that answers (anthropic, deepseek, ollama,
+	// Interface Provider is the supplier that answers (anthropic, deepseek, ollama,
 	// azure-openai, litellm); ProviderModel is the concrete model it serves.
 	//
 	// The catalog is three levels -- supplier, logical alias,
@@ -135,7 +129,27 @@ type ApiModel struct {
 	// The reviewer already logs provider + model_served per call, so the
 	// distinction existed everywhere except here.
 	//
+	// RENAMED FROM `provider` IN 00023. It holds the ADAPTER -- how we reach
+	// the model -- and calling that the provider is the conflation 00023
+	// removes: glm, codestral and qwen-via-litellm all answer "litellm" here
+	// and are z.ai, Mistral and our own Ollama. `provider` now means whose
+	// model it is, below.
+	//
 	// source: model_catalog(logical_model, provider_model, adapter) -- migration 00001
+	Interface *string `json:"interface,omitempty"`
+
+	// MaxCtx Capabilities/limits so callers can cap what they can't otherwise see
+	// (INTERFACES.md §4 "degrade visibly, never silently"). max_ctx is the model's
+	// context window; vision reports image-input support.
+	MaxCtx  *int    `json:"max_ctx,omitempty"`
+	Object  *string `json:"object,omitempty"`
+	OwnedBy *string `json:"owned_by,omitempty"`
+
+	// Provider Provider is WHOSE model it is; Hosting is where the weights run.
+	//
+	// Empty when the row is unseeded, so a client can tell "unknown" from
+	// "leartech" rather than defaulting a third party to us.
+	// proven-by: TestProvenance_TheLiteLLMModelsAreNotOneSupplier
 	Provider      *string `json:"provider,omitempty"`
 	ProviderModel *string `json:"provider_model,omitempty"`
 	Vision        *bool   `json:"vision,omitempty"`
