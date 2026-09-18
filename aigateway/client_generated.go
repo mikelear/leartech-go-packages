@@ -93,6 +93,12 @@ type ApiErrorResponseDto struct {
 	Error *ApiError `json:"error,omitempty"`
 }
 
+// ApiLeartechCache defines model for api.LeartechCache.
+type ApiLeartechCache struct {
+	Write1hTokens *int `json:"write_1h_tokens,omitempty"`
+	Write5mTokens *int `json:"write_5m_tokens,omitempty"`
+}
+
 // ApiLeartechExt defines model for api.LeartechExt.
 type ApiLeartechExt struct {
 	RequireResidency *string `json:"require_residency,omitempty"`
@@ -141,6 +147,11 @@ type ApiModelsResponseDto struct {
 	Object *string     `json:"object,omitempty"`
 }
 
+// ApiPromptTokensDetails defines model for api.PromptTokensDetails.
+type ApiPromptTokensDetails struct {
+	CachedTokens *int `json:"cached_tokens,omitempty"`
+}
+
 // ApiRequestMessage defines model for api.RequestMessage.
 type ApiRequestMessage struct {
 	Content    *map[string]interface{} `json:"content,omitempty"`
@@ -152,9 +163,32 @@ type ApiRequestMessage struct {
 
 // ApiUsage defines model for api.Usage.
 type ApiUsage struct {
-	CompletionTokens *int `json:"completion_tokens,omitempty"`
-	PromptTokens     *int `json:"prompt_tokens,omitempty"`
-	TotalTokens      *int `json:"total_tokens,omitempty"`
+	CompletionTokens *int              `json:"completion_tokens,omitempty"`
+	LeartechCache    *ApiLeartechCache `json:"leartech_cache,omitempty"`
+	PromptTokens     *int              `json:"prompt_tokens,omitempty"`
+
+	// PromptTokensDetails ONE CONVENTION IN THIS OBJECT: every detail field below is a SUBSET of
+	// PromptTokens, which is every prompt token processed. Reads and writes are
+	// disjoint subsets — a prefix is either served from cache or written to it,
+	// not both in one request.
+	//
+	// Subset rather than additive, and the reason is a client we did not write.
+	// A naive OpenAI client reads prompt_tokens, ignores every detail field and
+	// multiplies by the input rate: under subset that OVER-estimates, because
+	// the cached portion actually bills at a fraction; under additive it
+	// UNDER-estimates by two orders of magnitude, because the written tokens
+	// carry a premium and are invisible. Erring safe for the clients we control
+	// least follows the same principle as absence-resolving-to-the-input-rate.
+	//
+	// It also keeps total_tokens honest: because PromptTokens is already the
+	// whole, total = prompt + completion is simultaneously OpenAI-pure and
+	// reconcilable against the cost on the same response. Under an additive
+	// extension those two are in conflict and something has to give.
+	//
+	// proven-by: TestUsageResponse_IsLosslessAcrossTheConventionFlip
+	// proven-by: TestUsageResponse_TotalTokensStaysOpenAIPure
+	PromptTokensDetails *ApiPromptTokensDetails `json:"prompt_tokens_details,omitempty"`
+	TotalTokens         *int                    `json:"total_tokens,omitempty"`
 }
 
 // ApiUsageResponseDto defines model for api.UsageResponseDto.
