@@ -28,12 +28,23 @@ type ApiAmendKeyRequest struct {
 
 // ApiChatCompletionRequest defines model for api.ChatCompletionRequest.
 type ApiChatCompletionRequest struct {
-	MaxTokens   *int                    `json:"max_tokens,omitempty"`
-	Messages    []ApiRequestMessage     `json:"messages"`
-	Model       string                  `json:"model"`
-	Stream      *bool                   `json:"stream,omitempty"`
-	Temperature *float32                `json:"temperature,omitempty"`
-	ToolChoice  *map[string]interface{} `json:"tool_choice,omitempty"`
+	MaxTokens *int                `json:"max_tokens,omitempty"`
+	Messages  []ApiRequestMessage `json:"messages"`
+	Model     string              `json:"model"`
+	Stream    *bool               `json:"stream,omitempty"`
+
+	// StreamOptions StreamOptions.IncludeUsage asks for a final chunk carrying the token and
+	// cache breakdown, the same shape OpenAI emits and the same one
+	// openai.go already sends UPSTREAM and parses back.
+	//
+	// The gateway received usage on every streamed call, billed with it, and
+	// dropped it before the client -- so a streamed turn was the least visible
+	// traffic on the system while being the highest volume an agent loop
+	// produces. Found by the CLI session building the first streaming
+	// consumer.
+	StreamOptions *ApiStreamOptions       `json:"stream_options,omitempty"`
+	Temperature   *float32                `json:"temperature,omitempty"`
+	ToolChoice    *map[string]interface{} `json:"tool_choice,omitempty"`
 
 	// Tools S7b passthrough: forwarded verbatim to OpenAI-compatible providers.
 	Tools     *map[string]interface{} `json:"tools,omitempty"`
@@ -173,6 +184,11 @@ type ApiRequestMessage struct {
 	Role       *string                 `json:"role,omitempty"`
 	ToolCallId *string                 `json:"tool_call_id,omitempty"`
 	ToolCalls  *map[string]interface{} `json:"tool_calls,omitempty"`
+}
+
+// ApiStreamOptions defines model for api.StreamOptions.
+type ApiStreamOptions struct {
+	IncludeUsage *bool `json:"include_usage,omitempty"`
 }
 
 // ApiUsage defines model for api.Usage.
