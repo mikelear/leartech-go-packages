@@ -177,6 +177,43 @@ type ApiPromptTokensDetails struct {
 	CachedTokens *int `json:"cached_tokens,omitempty"`
 }
 
+// ApiProtectedResourceMetadata defines model for api.ProtectedResourceMetadata.
+type ApiProtectedResourceMetadata struct {
+	// Audience Audience is a DEVIATION and is named as one. RFC 9728 expects a client
+	// to pass `resource` (RFC 8707) and receive a correctly-audienced token.
+	// This estate issues tokens carrying a bare audience string instead
+	// (LEARTECH_AUTH_AUDIENCE, "leartech-ai-gateway"), and the verifier
+	// enforces that value. A client that knew only `resource` would request
+	// the wrong thing and be refused, so the value it actually needs is
+	// published rather than left to be guessed from a 401.
+	Audience *string `json:"audience,omitempty"`
+
+	// AuthorizationServers AuthorizationServers is where to get a token. One entry: a gateway
+	// answers to exactly one issuer, and LEARTECH_AUTH_ISSUER is the same
+	// value the verifier enforces, so this does not drift from what is
+	// accepted.
+	//
+	// proven-by: TestProtectedResource_PublishesWhatTheVerifierEnforces
+	AuthorizationServers *[]string `json:"authorization_servers,omitempty"`
+
+	// BearerMethodsSupported BearerMethodsSupported: the gateway takes a bearer header, and virtual
+	// keys additionally arrive via x-api-key. Only the standard method is
+	// listed, because this document describes the OAUTH resource and a
+	// virtual key is not an OAuth credential.
+	BearerMethodsSupported *[]string `json:"bearer_methods_supported,omitempty"`
+
+	// Resource Resource identifies this deployment. Derived from the request rather
+	// than configured, because the gateway is reached on a different host per
+	// cluster and nothing tells it which -- there is no PUBLIC_URL, and adding
+	// one would be a second source for a fact the request already carries.
+	Resource *string `json:"resource,omitempty"`
+
+	// ScopesSupported ScopesSupported is the published registry, not a hand-written list --
+	// so a scope added to internal/authz appears here without anyone
+	// remembering to update a document.
+	ScopesSupported *[]string `json:"scopes_supported,omitempty"`
+}
+
 // ApiRequestMessage defines model for api.RequestMessage.
 type ApiRequestMessage struct {
 	Content    *map[string]interface{} `json:"content,omitempty"`
@@ -418,6 +455,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetWellKnownOauthProtectedResource request
+	GetWellKnownOauthProtectedResource(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetAdminV1Keys request
 	GetAdminV1Keys(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -465,6 +505,18 @@ type ClientInterface interface {
 
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetWellKnownOauthProtectedResource(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWellKnownOauthProtectedResourceRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetAdminV1Keys(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -669,6 +721,33 @@ func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) 
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewGetWellKnownOauthProtectedResourceRequest generates requests for GetWellKnownOauthProtectedResource
+func NewGetWellKnownOauthProtectedResourceRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/.well-known/oauth-protected-resource")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewGetAdminV1KeysRequest generates requests for GetAdminV1Keys
@@ -1152,6 +1231,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetWellKnownOauthProtectedResourceWithResponse request
+	GetWellKnownOauthProtectedResourceWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetWellKnownOauthProtectedResourceResponse, error)
+
 	// GetAdminV1KeysWithResponse request
 	GetAdminV1KeysWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1KeysResponse, error)
 
@@ -1199,6 +1281,28 @@ type ClientWithResponsesInterface interface {
 
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
+}
+
+type GetWellKnownOauthProtectedResourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiProtectedResourceMetadata
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWellKnownOauthProtectedResourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWellKnownOauthProtectedResourceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetAdminV1KeysResponse struct {
@@ -1517,6 +1621,15 @@ func (r GetVersionResponse) StatusCode() int {
 	return 0
 }
 
+// GetWellKnownOauthProtectedResourceWithResponse request returning *GetWellKnownOauthProtectedResourceResponse
+func (c *ClientWithResponses) GetWellKnownOauthProtectedResourceWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetWellKnownOauthProtectedResourceResponse, error) {
+	rsp, err := c.GetWellKnownOauthProtectedResource(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWellKnownOauthProtectedResourceResponse(rsp)
+}
+
 // GetAdminV1KeysWithResponse request returning *GetAdminV1KeysResponse
 func (c *ClientWithResponses) GetAdminV1KeysWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1KeysResponse, error) {
 	rsp, err := c.GetAdminV1Keys(ctx, reqEditors...)
@@ -1665,6 +1778,32 @@ func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEdi
 		return nil, err
 	}
 	return ParseGetVersionResponse(rsp)
+}
+
+// ParseGetWellKnownOauthProtectedResourceResponse parses an HTTP response from a GetWellKnownOauthProtectedResourceWithResponse call
+func ParseGetWellKnownOauthProtectedResourceResponse(rsp *http.Response) (*GetWellKnownOauthProtectedResourceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWellKnownOauthProtectedResourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiProtectedResourceMetadata
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetAdminV1KeysResponse parses an HTTP response from a GetAdminV1KeysWithResponse call
