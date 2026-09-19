@@ -191,6 +191,44 @@ type ApiStreamOptions struct {
 	IncludeUsage *bool `json:"include_usage,omitempty"`
 }
 
+// ApiTool defines model for api.Tool.
+type ApiTool struct {
+	// Available Available reports whether THIS credential may call it. Unavailable
+	// tools are still listed, deliberately: a shortened list makes "why can
+	// this shell not search" unanswerable without reading scopes by hand.
+	//
+	// The client shows the full list and offers only the available ones to
+	// the model, so display and capability stay different lists. Offering an
+	// unavailable tool would have the model plan around a capability it does
+	// not have and then 403.
+	Available *bool            `json:"available,omitempty"`
+	Function  *ApiToolFunction `json:"function,omitempty"`
+
+	// Scope Scope names what a caller would need, so "unavailable" is actionable
+	// rather than just a closed door.
+	Scope *string `json:"scope,omitempty"`
+	Type  *string `json:"type,omitempty"`
+}
+
+// ApiToolFunction defines model for api.ToolFunction.
+type ApiToolFunction struct {
+	// Description Description is what the model chooses on AND what a user reads at
+	// approval time, so it is written for both.
+	Description *string `json:"description,omitempty"`
+	Name        *string `json:"name,omitempty"`
+
+	// Parameters Parameters is a JSON Schema, kept RAW for the same reason
+	// ToolCall.Arguments is: the gateway publishes it without interpreting
+	// it, so a schema keyword we do not model survives translation.
+	Parameters *map[string]interface{} `json:"parameters,omitempty"`
+}
+
+// ApiToolsResponseDto defines model for api.ToolsResponseDto.
+type ApiToolsResponseDto struct {
+	Data   *[]ApiTool `json:"data,omitempty"`
+	Object *string    `json:"object,omitempty"`
+}
+
 // ApiUsage defines model for api.Usage.
 type ApiUsage struct {
 	CompletionTokens *int              `json:"completion_tokens,omitempty"`
@@ -422,6 +460,9 @@ type ClientInterface interface {
 	// PostV1Search request
 	PostV1Search(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetV1Tools request
+	GetV1Tools(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
@@ -596,6 +637,18 @@ func (c *Client) GetV1Models(ctx context.Context, reqEditors ...RequestEditorFn)
 
 func (c *Client) PostV1Search(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostV1SearchRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetV1Tools(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV1ToolsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -1002,6 +1055,33 @@ func NewPostV1SearchRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewGetV1ToolsRequest generates requests for GetV1Tools
+func NewGetV1ToolsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/tools")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetVersionRequest generates requests for GetVersion
 func NewGetVersionRequest(server string) (*http.Request, error) {
 	var err error
@@ -1113,6 +1193,9 @@ type ClientWithResponsesInterface interface {
 
 	// PostV1SearchWithResponse request
 	PostV1SearchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1SearchResponse, error)
+
+	// GetV1ToolsWithResponse request
+	GetV1ToolsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV1ToolsResponse, error)
 
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
@@ -1390,6 +1473,28 @@ func (r PostV1SearchResponse) StatusCode() int {
 	return 0
 }
 
+type GetV1ToolsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiToolsResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV1ToolsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV1ToolsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetVersionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1542,6 +1647,15 @@ func (c *ClientWithResponses) PostV1SearchWithResponse(ctx context.Context, reqE
 		return nil, err
 	}
 	return ParsePostV1SearchResponse(rsp)
+}
+
+// GetV1ToolsWithResponse request returning *GetV1ToolsResponse
+func (c *ClientWithResponses) GetV1ToolsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV1ToolsResponse, error) {
+	rsp, err := c.GetV1Tools(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV1ToolsResponse(rsp)
 }
 
 // GetVersionWithResponse request returning *GetVersionResponse
@@ -1904,6 +2018,32 @@ func ParsePostV1SearchResponse(rsp *http.Response) (*PostV1SearchResponse, error
 	response := &PostV1SearchResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetV1ToolsResponse parses an HTTP response from a GetV1ToolsWithResponse call
+func ParseGetV1ToolsResponse(rsp *http.Response) (*GetV1ToolsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV1ToolsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiToolsResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil
