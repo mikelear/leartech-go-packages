@@ -42,6 +42,32 @@ type HandlersExampleResponseDto struct {
 	Service *string `json:"service,omitempty"`
 }
 
+// HandlersShellPrompt defines model for handlers.ShellPrompt.
+type HandlersShellPrompt struct {
+	// Label Label is the human name for this prompt, if the cluster set one.
+	// Free text for a reader; Revision is what identifies it.
+	Label *string `json:"label,omitempty"`
+
+	// Prompt Prompt is the system prompt, or empty when this cluster sets none.
+	Prompt *string `json:"prompt,omitempty"`
+
+	// Revision Revision identifies this exact text.
+	//
+	// A content hash, not a hand-set number. // proven-by: TestShellPrompt_RevisionIsDerivedFromTheContent
+	// A version someone has to remember to bump goes stale quietly, and
+	// two different prompts claiming one revision make every session
+	// recorded against it unreadable. Derived from the bytes, so it
+	// agrees with what was served.
+	//
+	// proven-by: TestShellPrompt_RevisionIsDerivedFromTheContent
+	// proven-by: TestShellPrompt_DifferentPromptsNeverShareARevision
+	Revision *string `json:"revision,omitempty"`
+
+	// Source Source names where the value came from, for a client that has to
+	// tell an operator which prompt it is running.
+	Source *string `json:"source,omitempty"`
+}
+
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -118,6 +144,9 @@ type ClientInterface interface {
 	// GetApiV1Example request
 	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetApiV1ShellPrompt request
+	GetApiV1ShellPrompt(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetClients request
 	GetClients(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -133,6 +162,18 @@ type ClientInterface interface {
 
 func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetApiV1ExampleRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1ShellPrompt(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ShellPromptRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -201,6 +242,33 @@ func NewGetApiV1ExampleRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/example")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1ShellPromptRequest generates requests for GetApiV1ShellPrompt
+func NewGetApiV1ShellPromptRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/shell/prompt")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -379,6 +447,9 @@ type ClientWithResponsesInterface interface {
 	// GetApiV1ExampleWithResponse request
 	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
 
+	// GetApiV1ShellPromptWithResponse request
+	GetApiV1ShellPromptWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ShellPromptResponse, error)
+
 	// GetClientsWithResponse request
 	GetClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetClientsResponse, error)
 
@@ -409,6 +480,28 @@ func (r GetApiV1ExampleResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetApiV1ExampleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1ShellPromptResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersShellPrompt
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1ShellPromptResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1ShellPromptResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -511,6 +604,15 @@ func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, r
 	return ParseGetApiV1ExampleResponse(rsp)
 }
 
+// GetApiV1ShellPromptWithResponse request returning *GetApiV1ShellPromptResponse
+func (c *ClientWithResponses) GetApiV1ShellPromptWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ShellPromptResponse, error) {
+	rsp, err := c.GetApiV1ShellPrompt(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1ShellPromptResponse(rsp)
+}
+
 // GetClientsWithResponse request returning *GetClientsResponse
 func (c *ClientWithResponses) GetClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetClientsResponse, error) {
 	rsp, err := c.GetClients(ctx, reqEditors...)
@@ -574,6 +676,32 @@ func ParseGetApiV1ExampleResponse(rsp *http.Response) (*GetApiV1ExampleResponse,
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1ShellPromptResponse parses an HTTP response from a GetApiV1ShellPromptWithResponse call
+func ParseGetApiV1ShellPromptResponse(rsp *http.Response) (*GetApiV1ShellPromptResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1ShellPromptResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersShellPrompt
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 
