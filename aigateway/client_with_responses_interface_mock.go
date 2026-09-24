@@ -88,6 +88,43 @@ func (_m *MockClientWithResponsesInterface) GetAdminV1KeysWithResponse(ctx conte
 	return r0, r1
 }
 
+// GetAdminV1PricingWithResponse provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientWithResponsesInterface) GetAdminV1PricingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1PricingResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAdminV1PricingWithResponse")
+	}
+
+	var r0 *GetAdminV1PricingResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*GetAdminV1PricingResponse, error)); ok {
+		return rf(ctx, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *GetAdminV1PricingResponse); ok {
+		r0 = rf(ctx, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*GetAdminV1PricingResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetAdminV1UsageWithResponse provides a mock function with given fields: ctx, reqEditors
 func (_m *MockClientWithResponsesInterface) GetAdminV1UsageWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1UsageResponse, error) {
 	_va := make([]interface{}, len(reqEditors))

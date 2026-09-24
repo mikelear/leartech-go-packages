@@ -172,6 +172,44 @@ type ApiModelsResponseDto struct {
 	Object *string     `json:"object,omitempty"`
 }
 
+// ApiPricingModel defines model for api.PricingModel.
+type ApiPricingModel struct {
+	Hosting   *string `json:"hosting,omitempty"`
+	Id        *string `json:"id,omitempty"`
+	Interface *string `json:"interface,omitempty"`
+	Provider  *string `json:"provider,omitempty"`
+
+	// Rates Rates is micros per 1000 tokens, keyed by kind (input, output,
+	// cache_read, cache_write_5m, cache_write_1h). A kind ABSENT from this map
+	// has no rate on file; it is not zero. The distinction is the point of the
+	// endpoint — see Unpriced.
+	Rates *map[string]int64 `json:"rates,omitempty"`
+
+	// Unpriced Unpriced reports that this model is callable and has NO input rate.
+	//
+	// THIS IS THE FIELD THE ENDPOINT EXISTS FOR. A missing rate resolves to
+	// zero in the router's cost ranking, so an unpriced model reads as FREE
+	// and `auto` prefers it over every real supplier. Until now the only
+	// symptom was traffic silently moving. Reporting it as a boolean rather
+	// than as a zero in Rates keeps "costs nothing" and "nobody set a price"
+	// distinguishable, which is exactly the conflation that makes the defect
+	// invisible.
+	//
+	// proven-by: TestPricing_AnUnpricedModelIsFlagged_NotReportedAsFree
+	Unpriced *bool `json:"unpriced,omitempty"`
+}
+
+// ApiPricingResponseDto defines model for api.PricingResponseDto.
+type ApiPricingResponseDto struct {
+	Data   *[]ApiPricingModel `json:"data,omitempty"`
+	Object *string            `json:"object,omitempty"`
+	Unit   *string            `json:"unit,omitempty"`
+
+	// UnpricedCount UnpricedCount is the same fact as the per-model flag, totalled, so a
+	// dashboard or a CLI can alert without walking the list.
+	UnpricedCount *int `json:"unpriced_count,omitempty"`
+}
+
 // ApiPromptTokensDetails defines model for api.PromptTokensDetails.
 type ApiPromptTokensDetails struct {
 	CachedTokens *int `json:"cached_tokens,omitempty"`
@@ -477,6 +515,9 @@ type ClientInterface interface {
 	// PostAdminV1KeysKeyidRotate request
 	PostAdminV1KeysKeyidRotate(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetAdminV1Pricing request
+	GetAdminV1Pricing(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetAdminV1Usage request
 	GetAdminV1Usage(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -593,6 +634,18 @@ func (c *Client) PatchAdminV1KeysKeyid(ctx context.Context, keyid string, body P
 
 func (c *Client) PostAdminV1KeysKeyidRotate(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostAdminV1KeysKeyidRotateRequest(c.Server, keyid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAdminV1Pricing(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminV1PricingRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -932,6 +985,33 @@ func NewPostAdminV1KeysKeyidRotateRequest(server string, keyid string) (*http.Re
 	return req, nil
 }
 
+// NewGetAdminV1PricingRequest generates requests for GetAdminV1Pricing
+func NewGetAdminV1PricingRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/v1/pricing")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetAdminV1UsageRequest generates requests for GetAdminV1Usage
 func NewGetAdminV1UsageRequest(server string) (*http.Request, error) {
 	var err error
@@ -1253,6 +1333,9 @@ type ClientWithResponsesInterface interface {
 	// PostAdminV1KeysKeyidRotateWithResponse request
 	PostAdminV1KeysKeyidRotateWithResponse(ctx context.Context, keyid string, reqEditors ...RequestEditorFn) (*PostAdminV1KeysKeyidRotateResponse, error)
 
+	// GetAdminV1PricingWithResponse request
+	GetAdminV1PricingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1PricingResponse, error)
+
 	// GetAdminV1UsageWithResponse request
 	GetAdminV1UsageWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1UsageResponse, error)
 
@@ -1418,6 +1501,29 @@ func (r PostAdminV1KeysKeyidRotateResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostAdminV1KeysKeyidRotateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetAdminV1PricingResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiPricingResponseDto
+	JSON403      *ApiErrorResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminV1PricingResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminV1PricingResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1689,6 +1795,15 @@ func (c *ClientWithResponses) PostAdminV1KeysKeyidRotateWithResponse(ctx context
 		return nil, err
 	}
 	return ParsePostAdminV1KeysKeyidRotateResponse(rsp)
+}
+
+// GetAdminV1PricingWithResponse request returning *GetAdminV1PricingResponse
+func (c *ClientWithResponses) GetAdminV1PricingWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminV1PricingResponse, error) {
+	rsp, err := c.GetAdminV1Pricing(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminV1PricingResponse(rsp)
 }
 
 // GetAdminV1UsageWithResponse request returning *GetAdminV1UsageResponse
@@ -1993,6 +2108,39 @@ func ParsePostAdminV1KeysKeyidRotateResponse(rsp *http.Response) (*PostAdminV1Ke
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminV1PricingResponse parses an HTTP response from a GetAdminV1PricingWithResponse call
+func ParseGetAdminV1PricingResponse(rsp *http.Response) (*GetAdminV1PricingResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminV1PricingResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiPricingResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
