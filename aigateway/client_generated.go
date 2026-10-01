@@ -92,6 +92,28 @@ type ApiCreateKeyResponseDto struct {
 	Secret *string     `json:"secret,omitempty"`
 }
 
+// ApiEmbeddingObj defines model for api.EmbeddingObj.
+type ApiEmbeddingObj struct {
+	Embedding *[]float32 `json:"embedding,omitempty"`
+	Index     *int       `json:"index,omitempty"`
+
+	// Object "embedding"
+	Object *string `json:"object,omitempty"`
+}
+
+// ApiEmbeddingsRequest defines model for api.EmbeddingsRequest.
+type ApiEmbeddingsRequest = map[string]interface{}
+
+// ApiEmbeddingsResponseDto defines model for api.EmbeddingsResponseDto.
+type ApiEmbeddingsResponseDto struct {
+	Data  *[]ApiEmbeddingObj `json:"data,omitempty"`
+	Model *string            `json:"model,omitempty"`
+
+	// Object "list"
+	Object *string   `json:"object,omitempty"`
+	Usage  *ApiUsage `json:"usage,omitempty"`
+}
+
 // ApiError defines model for api.Error.
 type ApiError struct {
 	Code    *string `json:"code,omitempty"`
@@ -420,6 +442,9 @@ type PatchAdminV1KeysKeyidJSONRequestBody = ApiAmendKeyRequest
 // PostV1ChatCompletionsJSONRequestBody defines body for PostV1ChatCompletions for application/json ContentType.
 type PostV1ChatCompletionsJSONRequestBody = ApiChatCompletionRequest
 
+// PostV1EmbeddingsJSONRequestBody defines body for PostV1Embeddings for application/json ContentType.
+type PostV1EmbeddingsJSONRequestBody = ApiEmbeddingsRequest
+
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -526,8 +551,10 @@ type ClientInterface interface {
 
 	PostV1ChatCompletions(ctx context.Context, body PostV1ChatCompletionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostV1Embeddings request
-	PostV1Embeddings(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostV1EmbeddingsWithBody request with any body
+	PostV1EmbeddingsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostV1Embeddings(ctx context.Context, body PostV1EmbeddingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PostV1Fetch request
 	PostV1Fetch(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -692,8 +719,20 @@ func (c *Client) PostV1ChatCompletions(ctx context.Context, body PostV1ChatCompl
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostV1Embeddings(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostV1EmbeddingsRequest(c.Server)
+func (c *Client) PostV1EmbeddingsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1EmbeddingsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostV1Embeddings(ctx context.Context, body PostV1EmbeddingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1EmbeddingsRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1079,8 +1118,19 @@ func NewPostV1ChatCompletionsRequestWithBody(server string, contentType string, 
 	return req, nil
 }
 
-// NewPostV1EmbeddingsRequest generates requests for PostV1Embeddings
-func NewPostV1EmbeddingsRequest(server string) (*http.Request, error) {
+// NewPostV1EmbeddingsRequest calls the generic PostV1Embeddings builder with application/json body
+func NewPostV1EmbeddingsRequest(server string, body PostV1EmbeddingsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostV1EmbeddingsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostV1EmbeddingsRequestWithBody generates requests for PostV1Embeddings with any type of body
+func NewPostV1EmbeddingsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1098,10 +1148,12 @@ func NewPostV1EmbeddingsRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1344,8 +1396,10 @@ type ClientWithResponsesInterface interface {
 
 	PostV1ChatCompletionsWithResponse(ctx context.Context, body PostV1ChatCompletionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1ChatCompletionsResponse, error)
 
-	// PostV1EmbeddingsWithResponse request
-	PostV1EmbeddingsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error)
+	// PostV1EmbeddingsWithBodyWithResponse request with any body
+	PostV1EmbeddingsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error)
+
+	PostV1EmbeddingsWithResponse(ctx context.Context, body PostV1EmbeddingsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error)
 
 	// PostV1FetchWithResponse request
 	PostV1FetchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1FetchResponse, error)
@@ -1580,6 +1634,9 @@ func (r PostV1ChatCompletionsResponse) StatusCode() int {
 type PostV1EmbeddingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ApiEmbeddingsResponseDto
+	JSON400      *ApiErrorResponseDto
+	JSON403      *ApiErrorResponseDto
 }
 
 // Status returns HTTPResponse.Status
@@ -1832,9 +1889,17 @@ func (c *ClientWithResponses) PostV1ChatCompletionsWithResponse(ctx context.Cont
 	return ParsePostV1ChatCompletionsResponse(rsp)
 }
 
-// PostV1EmbeddingsWithResponse request returning *PostV1EmbeddingsResponse
-func (c *ClientWithResponses) PostV1EmbeddingsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error) {
-	rsp, err := c.PostV1Embeddings(ctx, reqEditors...)
+// PostV1EmbeddingsWithBodyWithResponse request with arbitrary body returning *PostV1EmbeddingsResponse
+func (c *ClientWithResponses) PostV1EmbeddingsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error) {
+	rsp, err := c.PostV1EmbeddingsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV1EmbeddingsResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostV1EmbeddingsWithResponse(ctx context.Context, body PostV1EmbeddingsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error) {
+	rsp, err := c.PostV1Embeddings(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2231,6 +2296,30 @@ func ParsePostV1EmbeddingsResponse(rsp *http.Response) (*PostV1EmbeddingsRespons
 	response := &PostV1EmbeddingsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiEmbeddingsResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	}
 
 	return response, nil

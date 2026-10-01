@@ -569,14 +569,51 @@ func (_m *MockClientWithResponsesInterface) PostV1ChatCompletionsWithResponse(ct
 	return r0, r1
 }
 
-// PostV1EmbeddingsWithResponse provides a mock function with given fields: ctx, reqEditors
-func (_m *MockClientWithResponsesInterface) PostV1EmbeddingsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error) {
+// PostV1EmbeddingsWithBodyWithResponse provides a mock function with given fields: ctx, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostV1EmbeddingsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx)
+	_ca = append(_ca, ctx, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostV1EmbeddingsWithBodyWithResponse")
+	}
+
+	var r0 *PostV1EmbeddingsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*PostV1EmbeddingsResponse, error)); ok {
+		return rf(ctx, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *PostV1EmbeddingsResponse); ok {
+		r0 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*PostV1EmbeddingsResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PostV1EmbeddingsWithResponse provides a mock function with given fields: ctx, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostV1EmbeddingsWithResponse(ctx context.Context, body map[string]interface{}, reqEditors ...RequestEditorFn) (*PostV1EmbeddingsResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, body)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -586,19 +623,19 @@ func (_m *MockClientWithResponsesInterface) PostV1EmbeddingsWithResponse(ctx con
 
 	var r0 *PostV1EmbeddingsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*PostV1EmbeddingsResponse, error)); ok {
-		return rf(ctx, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, ...RequestEditorFn) (*PostV1EmbeddingsResponse, error)); ok {
+		return rf(ctx, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *PostV1EmbeddingsResponse); ok {
-		r0 = rf(ctx, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, ...RequestEditorFn) *PostV1EmbeddingsResponse); ok {
+		r0 = rf(ctx, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*PostV1EmbeddingsResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
