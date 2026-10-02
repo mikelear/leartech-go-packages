@@ -185,7 +185,18 @@ type ApiModel struct {
 	// proven-by: TestProvenance_TheLiteLLMModelsAreNotOneSupplier
 	Provider      *string `json:"provider,omitempty"`
 	ProviderModel *string `json:"provider_model,omitempty"`
-	Vision        *bool   `json:"vision,omitempty"`
+
+	// Surfaces Surfaces is what the model is served AS. Per-MODEL, not per-interface:
+	// qwen-embedding is embeddings-only behind the same fireworks interface
+	// that serves chat models, and a caller choosing a CHAT model needs to
+	// filter it out — which is what 00029 exists for.
+	//
+	// omitempty: an older gateway sends nothing and a client reads that
+	// as "unreported", not "serves nothing" — same rule as provider/hosting.
+	//
+	// proven-by: TestModels_PublishesTheSurfacesEachModelServes
+	Surfaces *[]string `json:"surfaces,omitempty"`
+	Vision   *bool     `json:"vision,omitempty"`
 }
 
 // ApiModelsResponseDto defines model for api.ModelsResponseDto.
