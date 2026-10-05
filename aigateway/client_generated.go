@@ -379,6 +379,33 @@ type ApiVersionResponseDto struct {
 	Version  *string `json:"version,omitempty"`
 }
 
+// ApiWebSearchProvider defines model for api.WebSearchProvider.
+type ApiWebSearchProvider struct {
+	// Default Default is the provider used when a request omits `provider`.
+	Default     *bool   `json:"default,omitempty"`
+	Description *string `json:"description,omitempty"`
+
+	// Id the `provider` value a request sends
+	Id *string `json:"id,omitempty"`
+
+	// Keyless Keyless reports whether this provider runs with no third-party
+	// credential (searxng aggregates keyless engines) — the "open lane" vs the
+	// "curated lane" a caller may be choosing between.
+	Keyless *bool `json:"keyless,omitempty"`
+
+	// Name human-facing
+	Name *string `json:"name,omitempty"`
+}
+
+// ApiWebSearchResponseDto defines model for api.WebSearchResponseDto.
+type ApiWebSearchResponseDto struct {
+	Data *[]ApiWebSearchProvider `json:"data,omitempty"`
+
+	// Default the selected provider's id
+	Default *string `json:"default,omitempty"`
+	Object  *string `json:"object,omitempty"`
+}
+
 // ApiKeyView defines model for api.keyView.
 type ApiKeyView struct {
 	BudgetMicros   *int      `json:"budget_micros,omitempty"`
@@ -581,6 +608,9 @@ type ClientInterface interface {
 
 	// GetV1Tools request
 	GetV1Tools(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetV1Websearch request
+	GetV1Websearch(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -804,6 +834,18 @@ func (c *Client) PostV1Search(ctx context.Context, reqEditors ...RequestEditorFn
 
 func (c *Client) GetV1Tools(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetV1ToolsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetV1Websearch(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV1WebsearchRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -1304,6 +1346,33 @@ func NewGetV1ToolsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewGetV1WebsearchRequest generates requests for GetV1Websearch
+func NewGetV1WebsearchRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/websearch")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetVersionRequest generates requests for GetVersion
 func NewGetVersionRequest(server string) (*http.Request, error) {
 	var err error
@@ -1426,6 +1495,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetV1ToolsWithResponse request
 	GetV1ToolsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV1ToolsResponse, error)
+
+	// GetV1WebsearchWithResponse request
+	GetV1WebsearchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV1WebsearchResponse, error)
 
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
@@ -1773,6 +1845,29 @@ func (r GetV1ToolsResponse) StatusCode() int {
 	return 0
 }
 
+type GetV1WebsearchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiWebSearchResponseDto
+	JSON403      *ApiErrorResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV1WebsearchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV1WebsearchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetVersionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1960,6 +2055,15 @@ func (c *ClientWithResponses) GetV1ToolsWithResponse(ctx context.Context, reqEdi
 		return nil, err
 	}
 	return ParseGetV1ToolsResponse(rsp)
+}
+
+// GetV1WebsearchWithResponse request returning *GetV1WebsearchResponse
+func (c *ClientWithResponses) GetV1WebsearchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV1WebsearchResponse, error) {
+	rsp, err := c.GetV1Websearch(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV1WebsearchResponse(rsp)
 }
 
 // GetVersionWithResponse request returning *GetVersionResponse
@@ -2430,6 +2534,39 @@ func ParseGetV1ToolsResponse(rsp *http.Response) (*GetV1ToolsResponse, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetV1WebsearchResponse parses an HTTP response from a GetV1WebsearchWithResponse call
+func ParseGetV1WebsearchResponse(rsp *http.Response) (*GetV1WebsearchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV1WebsearchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiWebSearchResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	}
 
