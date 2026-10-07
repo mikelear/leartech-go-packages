@@ -19,6 +19,22 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// HandlersBAPass defines model for handlers.BAPass.
+type HandlersBAPass struct {
+	// Answered questions closed this pass (0 or 1 — one per pass)
+	Answered *int    `json:"answered,omitempty"`
+	At       *string `json:"at,omitempty"`
+
+	// Error the failure, verbatim, when the pass failed
+	Error *string `json:"error,omitempty"`
+
+	// Exhausted R1 tripped; nothing picked up
+	Exhausted *bool `json:"exhausted,omitempty"`
+
+	// Pr the finding PR, when one was filed
+	Pr *string `json:"pr,omitempty"`
+}
+
 // HandlersClientBinary defines model for handlers.ClientBinary.
 type HandlersClientBinary struct {
 	Arch   *string `json:"arch,omitempty"`
@@ -141,6 +157,12 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetApiV1BaLast request
+	GetApiV1BaLast(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostApiV1BaTick request
+	PostApiV1BaTick(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetApiV1Example request
 	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -158,6 +180,30 @@ type ClientInterface interface {
 
 	// GetHealthReady request
 	GetHealthReady(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetApiV1BaLast(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1BaLastRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1BaTick(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1BaTickRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -230,6 +276,60 @@ func (c *Client) GetHealthReady(ctx context.Context, reqEditors ...RequestEditor
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewGetApiV1BaLastRequest generates requests for GetApiV1BaLast
+func NewGetApiV1BaLastRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/ba/last")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostApiV1BaTickRequest generates requests for PostApiV1BaTick
+func NewPostApiV1BaTickRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/ba/tick")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewGetApiV1ExampleRequest generates requests for GetApiV1Example
@@ -444,6 +544,12 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetApiV1BaLastWithResponse request
+	GetApiV1BaLastWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1BaLastResponse, error)
+
+	// PostApiV1BaTickWithResponse request
+	PostApiV1BaTickWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1BaTickResponse, error)
+
 	// GetApiV1ExampleWithResponse request
 	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
 
@@ -461,6 +567,52 @@ type ClientWithResponsesInterface interface {
 
 	// GetHealthReadyWithResponse request
 	GetHealthReadyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthReadyResponse, error)
+}
+
+type GetApiV1BaLastResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersBAPass
+	JSON404      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1BaLastResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1BaLastResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostApiV1BaTickResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersBAPass
+	JSON500      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostApiV1BaTickResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostApiV1BaTickResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetApiV1ExampleResponse struct {
@@ -595,6 +747,24 @@ func (r GetHealthReadyResponse) StatusCode() int {
 	return 0
 }
 
+// GetApiV1BaLastWithResponse request returning *GetApiV1BaLastResponse
+func (c *ClientWithResponses) GetApiV1BaLastWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1BaLastResponse, error) {
+	rsp, err := c.GetApiV1BaLast(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1BaLastResponse(rsp)
+}
+
+// PostApiV1BaTickWithResponse request returning *PostApiV1BaTickResponse
+func (c *ClientWithResponses) PostApiV1BaTickWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1BaTickResponse, error) {
+	rsp, err := c.PostApiV1BaTick(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1BaTickResponse(rsp)
+}
+
 // GetApiV1ExampleWithResponse request returning *GetApiV1ExampleResponse
 func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error) {
 	rsp, err := c.GetApiV1Example(ctx, reqEditors...)
@@ -647,6 +817,72 @@ func (c *ClientWithResponses) GetHealthReadyWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseGetHealthReadyResponse(rsp)
+}
+
+// ParseGetApiV1BaLastResponse parses an HTTP response from a GetApiV1BaLastWithResponse call
+func ParseGetApiV1BaLastResponse(rsp *http.Response) (*GetApiV1BaLastResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1BaLastResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersBAPass
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostApiV1BaTickResponse parses an HTTP response from a PostApiV1BaTickWithResponse call
+func ParsePostApiV1BaTickResponse(rsp *http.Response) (*PostApiV1BaTickResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostApiV1BaTickResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersBAPass
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetApiV1ExampleResponse parses an HTTP response from a GetApiV1ExampleWithResponse call
