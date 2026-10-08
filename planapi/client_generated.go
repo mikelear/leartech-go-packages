@@ -49,6 +49,22 @@ const (
 	VerdictUnknown  PreflightVerdict = "unknown"
 )
 
+// DtoAdoptPRRequest defines model for dto.AdoptPRRequest.
+type DtoAdoptPRRequest struct {
+	// HeadBranch HeadBranch is the source branch the PR was opened from. Optional; when
+	// set it is recorded alongside the PR so dependents can read the branch
+	// without re-querying GitHub.
+	HeadBranch *string `json:"headBranch,omitempty"`
+
+	// Pr PR is the pull-request number to record on the step's child AgentRun
+	// (status.targetPR). Required.
+	Pr *string `json:"pr,omitempty"`
+
+	// Reason Reason lands in the audit Decision recorded with the adopt. Optional;
+	// defaulted server-side.
+	Reason *string `json:"reason,omitempty"`
+}
+
 // DtoCheck defines model for dto.Check.
 type DtoCheck struct {
 	// Cluster Cluster is the cluster prefix parsed off the check name (gcp | az).
@@ -543,6 +559,9 @@ type PostPlansJSONRequestBody = DtoCreatePlanRequest
 // PostPlansPreflightJSONRequestBody defines body for PostPlansPreflight for application/json ContentType.
 type PostPlansPreflightJSONRequestBody = DtoCreatePlanRequest
 
+// PostPlansNameStepsStepAdoptPrJSONRequestBody defines body for PostPlansNameStepsStepAdoptPr for application/json ContentType.
+type PostPlansNameStepsStepAdoptPrJSONRequestBody = DtoAdoptPRRequest
+
 // PostPlansNameUnpauseJSONRequestBody defines body for PostPlansNameUnpause for application/json ContentType.
 type PostPlansNameUnpauseJSONRequestBody = DtoUnpauseRequest
 
@@ -641,6 +660,11 @@ type ClientInterface interface {
 	// GetPlansName request
 	GetPlansName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostPlansNameStepsStepAdoptPrWithBody request with any body
+	PostPlansNameStepsStepAdoptPrWithBody(ctx context.Context, name string, step string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostPlansNameStepsStepAdoptPr(ctx context.Context, name string, step string, body PostPlansNameStepsStepAdoptPrJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetPlansNameStepsStepGates request
 	GetPlansNameStepsStepGates(ctx context.Context, name string, step string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -736,6 +760,30 @@ func (c *Client) PostPlansPreflight(ctx context.Context, body PostPlansPreflight
 
 func (c *Client) GetPlansName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetPlansNameRequest(c.Server, name)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostPlansNameStepsStepAdoptPrWithBody(ctx context.Context, name string, step string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPlansNameStepsStepAdoptPrRequestWithBody(c.Server, name, step, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostPlansNameStepsStepAdoptPr(ctx context.Context, name string, step string, body PostPlansNameStepsStepAdoptPrJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPlansNameStepsStepAdoptPrRequest(c.Server, name, step, body)
 	if err != nil {
 		return nil, err
 	}
@@ -977,6 +1025,60 @@ func NewGetPlansNameRequest(server string, name string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewPostPlansNameStepsStepAdoptPrRequest calls the generic PostPlansNameStepsStepAdoptPr builder with application/json body
+func NewPostPlansNameStepsStepAdoptPrRequest(server string, name string, step string, body PostPlansNameStepsStepAdoptPrJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostPlansNameStepsStepAdoptPrRequestWithBody(server, name, step, "application/json", bodyReader)
+}
+
+// NewPostPlansNameStepsStepAdoptPrRequestWithBody generates requests for PostPlansNameStepsStepAdoptPr with any type of body
+func NewPostPlansNameStepsStepAdoptPrRequestWithBody(server string, name string, step string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "step", runtime.ParamLocationPath, step)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/plans/%s/steps/%s/adopt-pr", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetPlansNameStepsStepGatesRequest generates requests for GetPlansNameStepsStepGates
 func NewGetPlansNameStepsStepGatesRequest(server string, name string, step string) (*http.Request, error) {
 	var err error
@@ -1129,6 +1231,11 @@ type ClientWithResponsesInterface interface {
 
 	// GetPlansNameWithResponse request
 	GetPlansNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetPlansNameResponse, error)
+
+	// PostPlansNameStepsStepAdoptPrWithBodyWithResponse request with any body
+	PostPlansNameStepsStepAdoptPrWithBodyWithResponse(ctx context.Context, name string, step string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error)
+
+	PostPlansNameStepsStepAdoptPrWithResponse(ctx context.Context, name string, step string, body PostPlansNameStepsStepAdoptPrJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error)
 
 	// GetPlansNameStepsStepGatesWithResponse request
 	GetPlansNameStepsStepGatesWithResponse(ctx context.Context, name string, step string, reqEditors ...RequestEditorFn) (*GetPlansNameStepsStepGatesResponse, error)
@@ -1285,6 +1392,33 @@ func (r GetPlansNameResponse) StatusCode() int {
 	return 0
 }
 
+type PostPlansNameStepsStepAdoptPrResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DtoPlan
+	JSON400      *map[string]string
+	JSON401      *map[string]string
+	JSON403      *map[string]string
+	JSON404      *map[string]string
+	JSON500      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostPlansNameStepsStepAdoptPrResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostPlansNameStepsStepAdoptPrResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetPlansNameStepsStepGatesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1406,6 +1540,23 @@ func (c *ClientWithResponses) GetPlansNameWithResponse(ctx context.Context, name
 		return nil, err
 	}
 	return ParseGetPlansNameResponse(rsp)
+}
+
+// PostPlansNameStepsStepAdoptPrWithBodyWithResponse request with arbitrary body returning *PostPlansNameStepsStepAdoptPrResponse
+func (c *ClientWithResponses) PostPlansNameStepsStepAdoptPrWithBodyWithResponse(ctx context.Context, name string, step string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error) {
+	rsp, err := c.PostPlansNameStepsStepAdoptPrWithBody(ctx, name, step, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostPlansNameStepsStepAdoptPrResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostPlansNameStepsStepAdoptPrWithResponse(ctx context.Context, name string, step string, body PostPlansNameStepsStepAdoptPrJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error) {
+	rsp, err := c.PostPlansNameStepsStepAdoptPr(ctx, name, step, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostPlansNameStepsStepAdoptPrResponse(rsp)
 }
 
 // GetPlansNameStepsStepGatesWithResponse request returning *GetPlansNameStepsStepGatesResponse
@@ -1648,6 +1799,67 @@ func ParseGetPlansNameResponse(rsp *http.Response) (*GetPlansNameResponse, error
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostPlansNameStepsStepAdoptPrResponse parses an HTTP response from a PostPlansNameStepsStepAdoptPrWithResponse call
+func ParsePostPlansNameStepsStepAdoptPrResponse(rsp *http.Response) (*PostPlansNameStepsStepAdoptPrResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostPlansNameStepsStepAdoptPrResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DtoPlan
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest map[string]string

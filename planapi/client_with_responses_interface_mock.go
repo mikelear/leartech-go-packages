@@ -199,6 +199,80 @@ func (_m *MockClientWithResponsesInterface) GetPlansWithResponse(ctx context.Con
 	return r0, r1
 }
 
+// PostPlansNameStepsStepAdoptPrWithBodyWithResponse provides a mock function with given fields: ctx, name, step, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostPlansNameStepsStepAdoptPrWithBodyWithResponse(ctx context.Context, name string, step string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, name, step, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostPlansNameStepsStepAdoptPrWithBodyWithResponse")
+	}
+
+	var r0 *PostPlansNameStepsStepAdoptPrResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, io.Reader, ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error)); ok {
+		return rf(ctx, name, step, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, io.Reader, ...RequestEditorFn) *PostPlansNameStepsStepAdoptPrResponse); ok {
+		r0 = rf(ctx, name, step, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*PostPlansNameStepsStepAdoptPrResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, name, step, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PostPlansNameStepsStepAdoptPrWithResponse provides a mock function with given fields: ctx, name, step, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostPlansNameStepsStepAdoptPrWithResponse(ctx context.Context, name string, step string, body DtoAdoptPRRequest, reqEditors ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, name, step, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostPlansNameStepsStepAdoptPrWithResponse")
+	}
+
+	var r0 *PostPlansNameStepsStepAdoptPrResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, DtoAdoptPRRequest, ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error)); ok {
+		return rf(ctx, name, step, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, DtoAdoptPRRequest, ...RequestEditorFn) *PostPlansNameStepsStepAdoptPrResponse); ok {
+		r0 = rf(ctx, name, step, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*PostPlansNameStepsStepAdoptPrResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, DtoAdoptPRRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, name, step, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PostPlansNameUnpauseWithBodyWithResponse provides a mock function with given fields: ctx, name, contentType, body, reqEditors
 func (_m *MockClientWithResponsesInterface) PostPlansNameUnpauseWithBodyWithResponse(ctx context.Context, name string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNameUnpauseResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
