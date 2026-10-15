@@ -283,6 +283,13 @@ type DtoHistoryEntry struct {
 	State       *string `json:"state,omitempty"`
 }
 
+// DtoPauseRequest defines model for dto.PauseRequest.
+type DtoPauseRequest struct {
+	// Reason Reason lands in the audit Decision recorded with the pause. Optional;
+	// defaulted server-side to a canned string naming the endpoint.
+	Reason *string `json:"reason,omitempty"`
+}
+
 // DtoPlan defines model for dto.Plan.
 type DtoPlan struct {
 	// CompletionTime CompletionTime is when the Plan reached a terminal phase. Nil while
@@ -559,6 +566,9 @@ type PostPlansJSONRequestBody = DtoCreatePlanRequest
 // PostPlansPreflightJSONRequestBody defines body for PostPlansPreflight for application/json ContentType.
 type PostPlansPreflightJSONRequestBody = DtoCreatePlanRequest
 
+// PostPlansNamePauseJSONRequestBody defines body for PostPlansNamePause for application/json ContentType.
+type PostPlansNamePauseJSONRequestBody = DtoPauseRequest
+
 // PostPlansNameStepsStepAdoptPrJSONRequestBody defines body for PostPlansNameStepsStepAdoptPr for application/json ContentType.
 type PostPlansNameStepsStepAdoptPrJSONRequestBody = DtoAdoptPRRequest
 
@@ -660,6 +670,11 @@ type ClientInterface interface {
 	// GetPlansName request
 	GetPlansName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostPlansNamePauseWithBody request with any body
+	PostPlansNamePauseWithBody(ctx context.Context, name string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostPlansNamePause(ctx context.Context, name string, body PostPlansNamePauseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostPlansNameStepsStepAdoptPrWithBody request with any body
 	PostPlansNameStepsStepAdoptPrWithBody(ctx context.Context, name string, step string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -760,6 +775,30 @@ func (c *Client) PostPlansPreflight(ctx context.Context, body PostPlansPreflight
 
 func (c *Client) GetPlansName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetPlansNameRequest(c.Server, name)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostPlansNamePauseWithBody(ctx context.Context, name string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPlansNamePauseRequestWithBody(c.Server, name, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostPlansNamePause(ctx context.Context, name string, body PostPlansNamePauseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPlansNamePauseRequest(c.Server, name, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1025,6 +1064,53 @@ func NewGetPlansNameRequest(server string, name string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewPostPlansNamePauseRequest calls the generic PostPlansNamePause builder with application/json body
+func NewPostPlansNamePauseRequest(server string, name string, body PostPlansNamePauseJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostPlansNamePauseRequestWithBody(server, name, "application/json", bodyReader)
+}
+
+// NewPostPlansNamePauseRequestWithBody generates requests for PostPlansNamePause with any type of body
+func NewPostPlansNamePauseRequestWithBody(server string, name string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/plans/%s/pause", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewPostPlansNameStepsStepAdoptPrRequest calls the generic PostPlansNameStepsStepAdoptPr builder with application/json body
 func NewPostPlansNameStepsStepAdoptPrRequest(server string, name string, step string, body PostPlansNameStepsStepAdoptPrJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -1232,6 +1318,11 @@ type ClientWithResponsesInterface interface {
 	// GetPlansNameWithResponse request
 	GetPlansNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetPlansNameResponse, error)
 
+	// PostPlansNamePauseWithBodyWithResponse request with any body
+	PostPlansNamePauseWithBodyWithResponse(ctx context.Context, name string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNamePauseResponse, error)
+
+	PostPlansNamePauseWithResponse(ctx context.Context, name string, body PostPlansNamePauseJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPlansNamePauseResponse, error)
+
 	// PostPlansNameStepsStepAdoptPrWithBodyWithResponse request with any body
 	PostPlansNameStepsStepAdoptPrWithBodyWithResponse(ctx context.Context, name string, step string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error)
 
@@ -1392,6 +1483,34 @@ func (r GetPlansNameResponse) StatusCode() int {
 	return 0
 }
 
+type PostPlansNamePauseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DtoPlan
+	JSON400      *map[string]string
+	JSON401      *map[string]string
+	JSON403      *map[string]string
+	JSON404      *map[string]string
+	JSON409      *map[string]string
+	JSON500      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostPlansNamePauseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostPlansNamePauseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PostPlansNameStepsStepAdoptPrResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1540,6 +1659,23 @@ func (c *ClientWithResponses) GetPlansNameWithResponse(ctx context.Context, name
 		return nil, err
 	}
 	return ParseGetPlansNameResponse(rsp)
+}
+
+// PostPlansNamePauseWithBodyWithResponse request with arbitrary body returning *PostPlansNamePauseResponse
+func (c *ClientWithResponses) PostPlansNamePauseWithBodyWithResponse(ctx context.Context, name string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNamePauseResponse, error) {
+	rsp, err := c.PostPlansNamePauseWithBody(ctx, name, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostPlansNamePauseResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostPlansNamePauseWithResponse(ctx context.Context, name string, body PostPlansNamePauseJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPlansNamePauseResponse, error) {
+	rsp, err := c.PostPlansNamePause(ctx, name, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostPlansNamePauseResponse(rsp)
 }
 
 // PostPlansNameStepsStepAdoptPrWithBodyWithResponse request with arbitrary body returning *PostPlansNameStepsStepAdoptPrResponse
@@ -1820,6 +1956,74 @@ func ParseGetPlansNameResponse(rsp *http.Response) (*GetPlansNameResponse, error
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostPlansNamePauseResponse parses an HTTP response from a PostPlansNamePauseWithResponse call
+func ParsePostPlansNamePauseResponse(rsp *http.Response) (*PostPlansNamePauseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostPlansNamePauseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DtoPlan
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest map[string]string
