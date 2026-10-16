@@ -791,6 +791,80 @@ func (_m *MockClientWithResponsesInterface) PostV1SearchWithResponse(ctx context
 	return r0, r1
 }
 
+// PutAdminV1KeysKeyidBudgetWithBodyWithResponse provides a mock function with given fields: ctx, keyid, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PutAdminV1KeysKeyidBudgetWithBodyWithResponse(ctx context.Context, keyid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutAdminV1KeysKeyidBudgetResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, keyid, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PutAdminV1KeysKeyidBudgetWithBodyWithResponse")
+	}
+
+	var r0 *PutAdminV1KeysKeyidBudgetResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*PutAdminV1KeysKeyidBudgetResponse, error)); ok {
+		return rf(ctx, keyid, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *PutAdminV1KeysKeyidBudgetResponse); ok {
+		r0 = rf(ctx, keyid, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*PutAdminV1KeysKeyidBudgetResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, keyid, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PutAdminV1KeysKeyidBudgetWithResponse provides a mock function with given fields: ctx, keyid, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PutAdminV1KeysKeyidBudgetWithResponse(ctx context.Context, keyid string, body ApiSetBudgetRequest, reqEditors ...RequestEditorFn) (*PutAdminV1KeysKeyidBudgetResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, keyid, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PutAdminV1KeysKeyidBudgetWithResponse")
+	}
+
+	var r0 *PutAdminV1KeysKeyidBudgetResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ApiSetBudgetRequest, ...RequestEditorFn) (*PutAdminV1KeysKeyidBudgetResponse, error)); ok {
+		return rf(ctx, keyid, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ApiSetBudgetRequest, ...RequestEditorFn) *PutAdminV1KeysKeyidBudgetResponse); ok {
+		r0 = rf(ctx, keyid, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*PutAdminV1KeysKeyidBudgetResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ApiSetBudgetRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, keyid, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewMockClientWithResponsesInterface creates a new instance of MockClientWithResponsesInterface. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockClientWithResponsesInterface(t interface {
