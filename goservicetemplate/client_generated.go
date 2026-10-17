@@ -4,7 +4,6 @@
 package goservicetemplate
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -20,139 +19,6 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
-// BlockchainChainStatus defines model for blockchain.ChainStatus.
-type BlockchainChainStatus struct {
-	BlockHeight *int    `json:"block_height,omitempty"`
-	ChainId     *int    `json:"chain_id,omitempty"`
-	Connected   *bool   `json:"connected,omitempty"`
-	Message     *string `json:"message,omitempty"`
-}
-
-// BlockchainDeployResult defines model for blockchain.DeployResult.
-type BlockchainDeployResult struct {
-	Chain       *string                 `json:"chain,omitempty"`
-	ChainId     *int                    `json:"chain_id,omitempty"`
-	Contract    *string                 `json:"contract,omitempty"`
-	Status      *string                 `json:"status,omitempty"`
-	Transaction *BlockchainSubmitResult `json:"transaction,omitempty"`
-
-	// Warning Warning carries a non-fatal post-broadcast problem (the deployment
-	// row did not land) so the 202 body can hold BOTH the hash the caller
-	// needs and the thing that went wrong around it.
-	Warning *string `json:"warning,omitempty"`
-}
-
-// BlockchainFinding defines model for blockchain.Finding.
-type BlockchainFinding struct {
-	// Level "error" | "warning" | "info"
-	Level   *string `json:"level,omitempty"`
-	Message *string `json:"message,omitempty"`
-}
-
-// BlockchainPlanRequest defines model for blockchain.PlanRequest.
-type BlockchainPlanRequest struct {
-	// Args Args are the constructor arguments, in ABI order.
-	Args *[]map[string]interface{} `json:"args,omitempty"`
-
-	// Bytecode Bytecode is the contract's creation code, 0x-hex. When empty the
-	// plan reports the finding and does not estimate gas — deploying a
-	// transaction with no init code is a caller error we surface, not one
-	// we paper over.
-	Bytecode *string `json:"bytecode,omitempty"`
-
-	// Chain Chain is a label for the deployment row; the chainId comes from the
-	// node the service is wired to.
-	Chain *string `json:"chain,omitempty"`
-
-	// Contract Contract is the catalog name whose ABI defines the constructor —
-	// "MockOracle" / "MockConsumer" today.
-	Contract string  `json:"contract"`
-	From     *string `json:"from,omitempty"`
-}
-
-// BlockchainPlanResult defines model for blockchain.PlanResult.
-type BlockchainPlanResult struct {
-	Abi         *map[string]map[string]interface{} `json:"abi,omitempty"`
-	Args        *[]map[string]interface{}          `json:"args,omitempty"`
-	Bytecode    *string                            `json:"bytecode,omitempty"`
-	Calldata    *string                            `json:"calldata,omitempty"`
-	Chain       *string                            `json:"chain,omitempty"`
-	ChainId     *int                               `json:"chain_id,omitempty"`
-	Constructor *string                            `json:"constructor,omitempty"`
-	Contract    *string                            `json:"contract,omitempty"`
-	DryRun      *bool                              `json:"dry_run,omitempty"`
-	EncodedArgs *string                            `json:"encoded_args,omitempty"`
-
-	// Findings Findings carries the plan's validation results, serialised with no
-	// omitempty so a plan with nothing to flag still answers
-	// "findings": []. A reviewer diffing two plans reads the field's
-	// absence as "the service predates findings", distinct from an empty
-	// list meaning "nothing flagged".
-	// proven-by: TestPlan_FindingsIsAlwaysAnArray
-	Findings    *[]BlockchainFinding `json:"findings,omitempty"`
-	GasEstimate *int                 `json:"gas_estimate,omitempty"`
-	GasSource   *string              `json:"gas_source,omitempty"`
-	Signer      *string              `json:"signer,omitempty"`
-}
-
-// BlockchainReadResult defines model for blockchain.ReadResult.
-type BlockchainReadResult struct {
-	Address *string                            `json:"address,omitempty"`
-	Decoded *map[string]map[string]interface{} `json:"decoded,omitempty"`
-	Method  *string                            `json:"method,omitempty"`
-	Raw     *string                            `json:"raw,omitempty"`
-}
-
-// BlockchainSimulateRequest defines model for blockchain.SimulateRequest.
-type BlockchainSimulateRequest = map[string]interface{}
-
-// BlockchainSimulateResult defines model for blockchain.SimulateResult.
-type BlockchainSimulateResult struct {
-	Decoded      *map[string]map[string]interface{} `json:"decoded,omitempty"`
-	From         *string                            `json:"from,omitempty"`
-	GasEstimate  *int                               `json:"gas_estimate,omitempty"`
-	GasSource    *string                            `json:"gas_source,omitempty"`
-	Method       *string                            `json:"method,omitempty"`
-	Raw          *string                            `json:"raw,omitempty"`
-	RevertReason *string                            `json:"revert_reason,omitempty"`
-	Reverted     *bool                              `json:"reverted,omitempty"`
-	To           *string                            `json:"to,omitempty"`
-	Trace        *map[string]map[string]interface{} `json:"trace,omitempty"`
-}
-
-// BlockchainSubmitRequest defines model for blockchain.SubmitRequest.
-type BlockchainSubmitRequest struct {
-	Args *[]map[string]interface{} `json:"args,omitempty"`
-
-	// Contract Either Contract+Method+Args (an ABI-encoded call on a catalogued
-	// contract) or To+Data (raw calldata).
-	Contract *string `json:"contract,omitempty"`
-	Data     *string `json:"data,omitempty"`
-	Method   *string `json:"method,omitempty"`
-	To       *string `json:"to,omitempty"`
-
-	// Value decimal wei
-	Value *string `json:"value,omitempty"`
-}
-
-// BlockchainSubmitResult defines model for blockchain.SubmitResult.
-type BlockchainSubmitResult struct {
-	From     *string `json:"from,omitempty"`
-	Gas      *int    `json:"gas,omitempty"`
-	GasPrice *string `json:"gas_price,omitempty"`
-	Hash     *string `json:"hash,omitempty"`
-	Nonce    *int    `json:"nonce,omitempty"`
-	Status   *string `json:"status,omitempty"`
-	To       *string `json:"to,omitempty"`
-}
-
-// BlockchainTransaction defines model for blockchain.Transaction.
-type BlockchainTransaction struct {
-	Hash    *string                            `json:"hash,omitempty"`
-	Receipt *map[string]map[string]interface{} `json:"receipt,omitempty"`
-	Status  *string                            `json:"status,omitempty"`
-}
-
 // HandlersExampleResponseDto defines model for handlers.ExampleResponseDto.
 type HandlersExampleResponseDto struct {
 	Message *string `json:"message,omitempty"`
@@ -166,11 +32,6 @@ type HandlersFleetTestResponseDto struct {
 	Summary *string               `json:"summary,omitempty"`
 }
 
-// HandlersListResponseDto defines model for handlers.listResponseDto.
-type HandlersListResponseDto struct {
-	Items *map[string]interface{} `json:"items,omitempty"`
-}
-
 // HandlersPeerResult defines model for handlers.peerResult.
 type HandlersPeerResult struct {
 	DurationMs *int    `json:"duration_ms,omitempty"`
@@ -180,65 +41,14 @@ type HandlersPeerResult struct {
 	Peer       *string `json:"peer,omitempty"`
 }
 
-// HandlersReadContractRequest defines model for handlers.readContractRequest.
-type HandlersReadContractRequest struct {
-	Args   *[]map[string]interface{} `json:"args,omitempty"`
-	Method string                    `json:"method"`
+// ProvidersPromoteResult defines model for providers.PromoteResult.
+type ProvidersPromoteResult struct {
+	// PendingUntilMerged PendingUntilMerged is true in the seed-store phase: the entry does
+	// not answer until the promote-PR merges, which is the whole point —
+	// a finding nobody reviewed must not become an integration contract.
+	PendingUntilMerged *bool   `json:"pending_until_merged,omitempty"`
+	PromotePr          *string `json:"promote_pr,omitempty"`
 }
-
-// GetApiV1ContractsParams defines parameters for GetApiV1Contracts.
-type GetApiV1ContractsParams struct {
-	// Name filter by contract name
-	Name *string `form:"name,omitempty" json:"name,omitempty"`
-
-	// Kind filter by contract kind (e.g. oracle, consumer)
-	Kind *string `form:"kind,omitempty" json:"kind,omitempty"`
-}
-
-// GetApiV1DeploymentsParams defines parameters for GetApiV1Deployments.
-type GetApiV1DeploymentsParams struct {
-	// Contract filter by contract name
-	Contract *string `form:"contract,omitempty" json:"contract,omitempty"`
-
-	// Chain filter by chain
-	Chain *string `form:"chain,omitempty" json:"chain,omitempty"`
-
-	// Address filter by deployed address
-	Address *string `form:"address,omitempty" json:"address,omitempty"`
-}
-
-// GetApiV1EventsParams defines parameters for GetApiV1Events.
-type GetApiV1EventsParams struct {
-	// Address filter by contract address
-	Address *string `form:"address,omitempty" json:"address,omitempty"`
-
-	// Event filter by event name
-	Event *string `form:"event,omitempty" json:"event,omitempty"`
-
-	// FromBlock first block (inclusive)
-	FromBlock *int `form:"from_block,omitempty" json:"from_block,omitempty"`
-
-	// ToBlock last block (inclusive)
-	ToBlock *int `form:"to_block,omitempty" json:"to_block,omitempty"`
-
-	// TxHash filter by transaction hash
-	TxHash *string `form:"tx_hash,omitempty" json:"tx_hash,omitempty"`
-}
-
-// PostApiV1ContractsAddressReadJSONRequestBody defines body for PostApiV1ContractsAddressRead for application/json ContentType.
-type PostApiV1ContractsAddressReadJSONRequestBody = HandlersReadContractRequest
-
-// PostApiV1DeploymentsJSONRequestBody defines body for PostApiV1Deployments for application/json ContentType.
-type PostApiV1DeploymentsJSONRequestBody = BlockchainPlanRequest
-
-// PostApiV1DeploymentsPlanJSONRequestBody defines body for PostApiV1DeploymentsPlan for application/json ContentType.
-type PostApiV1DeploymentsPlanJSONRequestBody = BlockchainPlanRequest
-
-// PostApiV1TransactionsJSONRequestBody defines body for PostApiV1Transactions for application/json ContentType.
-type PostApiV1TransactionsJSONRequestBody = BlockchainSubmitRequest
-
-// PostApiV1TransactionsSimulateJSONRequestBody defines body for PostApiV1TransactionsSimulate for application/json ContentType.
-type PostApiV1TransactionsSimulateJSONRequestBody = BlockchainSimulateRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -313,177 +123,26 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetApiV1ChainStatus request
-	GetApiV1ChainStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetApiV1Contracts request
-	GetApiV1Contracts(ctx context.Context, params *GetApiV1ContractsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostApiV1ContractsAddressReadWithBody request with any body
-	PostApiV1ContractsAddressReadWithBody(ctx context.Context, address string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostApiV1ContractsAddressRead(ctx context.Context, address string, body PostApiV1ContractsAddressReadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetApiV1Deployments request
-	GetApiV1Deployments(ctx context.Context, params *GetApiV1DeploymentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostApiV1DeploymentsWithBody request with any body
-	PostApiV1DeploymentsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostApiV1Deployments(ctx context.Context, body PostApiV1DeploymentsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostApiV1DeploymentsPlanWithBody request with any body
-	PostApiV1DeploymentsPlanWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostApiV1DeploymentsPlan(ctx context.Context, body PostApiV1DeploymentsPlanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetApiV1Events request
-	GetApiV1Events(ctx context.Context, params *GetApiV1EventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetApiV1Example request
 	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetApiV1FleetTest request
 	GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostApiV1TransactionsWithBody request with any body
-	PostApiV1TransactionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetApiV1ThirdParties request
+	GetApiV1ThirdParties(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostApiV1Transactions(ctx context.Context, body PostApiV1TransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostApiV1ThirdPartiesPromote request
+	PostApiV1ThirdPartiesPromote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostApiV1TransactionsSimulateWithBody request with any body
-	PostApiV1TransactionsSimulateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PostApiV1TransactionsSimulate(ctx context.Context, body PostApiV1TransactionsSimulateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetApiV1TransactionsHash request
-	GetApiV1TransactionsHash(ctx context.Context, hash string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetApiV1ThirdPartiesName request
+	GetApiV1ThirdPartiesName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthReady request
 	GetHealthReady(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-}
-
-func (c *Client) GetApiV1ChainStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1ChainStatusRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetApiV1Contracts(ctx context.Context, params *GetApiV1ContractsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1ContractsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostApiV1ContractsAddressReadWithBody(ctx context.Context, address string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1ContractsAddressReadRequestWithBody(c.Server, address, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostApiV1ContractsAddressRead(ctx context.Context, address string, body PostApiV1ContractsAddressReadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1ContractsAddressReadRequest(c.Server, address, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetApiV1Deployments(ctx context.Context, params *GetApiV1DeploymentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1DeploymentsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostApiV1DeploymentsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1DeploymentsRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostApiV1Deployments(ctx context.Context, body PostApiV1DeploymentsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1DeploymentsRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostApiV1DeploymentsPlanWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1DeploymentsPlanRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostApiV1DeploymentsPlan(ctx context.Context, body PostApiV1DeploymentsPlanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1DeploymentsPlanRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetApiV1Events(ctx context.Context, params *GetApiV1EventsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1EventsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
 }
 
 func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -510,8 +169,8 @@ func (c *Client) GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEdi
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1TransactionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1TransactionsRequestWithBody(c.Server, contentType, body)
+func (c *Client) GetApiV1ThirdParties(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ThirdPartiesRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -522,8 +181,8 @@ func (c *Client) PostApiV1TransactionsWithBody(ctx context.Context, contentType 
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1Transactions(ctx context.Context, body PostApiV1TransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1TransactionsRequest(c.Server, body)
+func (c *Client) PostApiV1ThirdPartiesPromote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ThirdPartiesPromoteRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -534,32 +193,8 @@ func (c *Client) PostApiV1Transactions(ctx context.Context, body PostApiV1Transa
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostApiV1TransactionsSimulateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1TransactionsSimulateRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostApiV1TransactionsSimulate(ctx context.Context, body PostApiV1TransactionsSimulateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1TransactionsSimulateRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetApiV1TransactionsHash(ctx context.Context, hash string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1TransactionsHashRequest(c.Server, hash)
+func (c *Client) GetApiV1ThirdPartiesName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ThirdPartiesNameRequest(c.Server, name)
 	if err != nil {
 		return nil, err
 	}
@@ -592,419 +227,6 @@ func (c *Client) GetHealthReady(ctx context.Context, reqEditors ...RequestEditor
 		return nil, err
 	}
 	return c.Client.Do(req)
-}
-
-// NewGetApiV1ChainStatusRequest generates requests for GetApiV1ChainStatus
-func NewGetApiV1ChainStatusRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/chain/status")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetApiV1ContractsRequest generates requests for GetApiV1Contracts
-func NewGetApiV1ContractsRequest(server string, params *GetApiV1ContractsParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/contracts")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if params.Name != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "name", runtime.ParamLocationQuery, *params.Name); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.Kind != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "kind", runtime.ParamLocationQuery, *params.Kind); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewPostApiV1ContractsAddressReadRequest calls the generic PostApiV1ContractsAddressRead builder with application/json body
-func NewPostApiV1ContractsAddressReadRequest(server string, address string, body PostApiV1ContractsAddressReadJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1ContractsAddressReadRequestWithBody(server, address, "application/json", bodyReader)
-}
-
-// NewPostApiV1ContractsAddressReadRequestWithBody generates requests for PostApiV1ContractsAddressRead with any type of body
-func NewPostApiV1ContractsAddressReadRequestWithBody(server string, address string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "address", runtime.ParamLocationPath, address)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/contracts/%s/read", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetApiV1DeploymentsRequest generates requests for GetApiV1Deployments
-func NewGetApiV1DeploymentsRequest(server string, params *GetApiV1DeploymentsParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/deployments")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if params.Contract != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contract", runtime.ParamLocationQuery, *params.Contract); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.Chain != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "chain", runtime.ParamLocationQuery, *params.Chain); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.Address != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "address", runtime.ParamLocationQuery, *params.Address); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewPostApiV1DeploymentsRequest calls the generic PostApiV1Deployments builder with application/json body
-func NewPostApiV1DeploymentsRequest(server string, body PostApiV1DeploymentsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1DeploymentsRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewPostApiV1DeploymentsRequestWithBody generates requests for PostApiV1Deployments with any type of body
-func NewPostApiV1DeploymentsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/deployments")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewPostApiV1DeploymentsPlanRequest calls the generic PostApiV1DeploymentsPlan builder with application/json body
-func NewPostApiV1DeploymentsPlanRequest(server string, body PostApiV1DeploymentsPlanJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1DeploymentsPlanRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewPostApiV1DeploymentsPlanRequestWithBody generates requests for PostApiV1DeploymentsPlan with any type of body
-func NewPostApiV1DeploymentsPlanRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/deployments/plan")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetApiV1EventsRequest generates requests for GetApiV1Events
-func NewGetApiV1EventsRequest(server string, params *GetApiV1EventsParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/events")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if params.Address != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "address", runtime.ParamLocationQuery, *params.Address); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.Event != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "event", runtime.ParamLocationQuery, *params.Event); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.FromBlock != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_block", runtime.ParamLocationQuery, *params.FromBlock); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.ToBlock != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "to_block", runtime.ParamLocationQuery, *params.ToBlock); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.TxHash != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tx_hash", runtime.ParamLocationQuery, *params.TxHash); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
 }
 
 // NewGetApiV1ExampleRequest generates requests for GetApiV1Example
@@ -1061,19 +283,8 @@ func NewGetApiV1FleetTestRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewPostApiV1TransactionsRequest calls the generic PostApiV1Transactions builder with application/json body
-func NewPostApiV1TransactionsRequest(server string, body PostApiV1TransactionsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1TransactionsRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewPostApiV1TransactionsRequestWithBody generates requests for PostApiV1Transactions with any type of body
-func NewPostApiV1TransactionsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewGetApiV1ThirdPartiesRequest generates requests for GetApiV1ThirdParties
+func NewGetApiV1ThirdPartiesRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1081,7 +292,7 @@ func NewPostApiV1TransactionsRequestWithBody(server string, contentType string, 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/v1/transactions")
+	operationPath := fmt.Sprintf("/api/v1/third-parties")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1091,29 +302,16 @@ func NewPostApiV1TransactionsRequestWithBody(server string, contentType string, 
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
 
-// NewPostApiV1TransactionsSimulateRequest calls the generic PostApiV1TransactionsSimulate builder with application/json body
-func NewPostApiV1TransactionsSimulateRequest(server string, body PostApiV1TransactionsSimulateJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPostApiV1TransactionsSimulateRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewPostApiV1TransactionsSimulateRequestWithBody generates requests for PostApiV1TransactionsSimulate with any type of body
-func NewPostApiV1TransactionsSimulateRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostApiV1ThirdPartiesPromoteRequest generates requests for PostApiV1ThirdPartiesPromote
+func NewPostApiV1ThirdPartiesPromoteRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1121,7 +319,7 @@ func NewPostApiV1TransactionsSimulateRequestWithBody(server string, contentType 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/v1/transactions/simulate")
+	operationPath := fmt.Sprintf("/api/v1/third-parties/promote")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1131,23 +329,21 @@ func NewPostApiV1TransactionsSimulateRequestWithBody(server string, contentType 
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("Content-Type", contentType)
-
 	return req, nil
 }
 
-// NewGetApiV1TransactionsHashRequest generates requests for GetApiV1TransactionsHash
-func NewGetApiV1TransactionsHashRequest(server string, hash string) (*http.Request, error) {
+// NewGetApiV1ThirdPartiesNameRequest generates requests for GetApiV1ThirdPartiesName
+func NewGetApiV1ThirdPartiesNameRequest(server string, name string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "hash", runtime.ParamLocationPath, hash)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
 	if err != nil {
 		return nil, err
 	}
@@ -1157,7 +353,7 @@ func NewGetApiV1TransactionsHashRequest(server string, hash string) (*http.Reque
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/v1/transactions/%s", pathParam0)
+	operationPath := fmt.Sprintf("/api/v1/third-parties/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1272,221 +468,26 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetApiV1ChainStatusWithResponse request
-	GetApiV1ChainStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ChainStatusResponse, error)
-
-	// GetApiV1ContractsWithResponse request
-	GetApiV1ContractsWithResponse(ctx context.Context, params *GetApiV1ContractsParams, reqEditors ...RequestEditorFn) (*GetApiV1ContractsResponse, error)
-
-	// PostApiV1ContractsAddressReadWithBodyWithResponse request with any body
-	PostApiV1ContractsAddressReadWithBodyWithResponse(ctx context.Context, address string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ContractsAddressReadResponse, error)
-
-	PostApiV1ContractsAddressReadWithResponse(ctx context.Context, address string, body PostApiV1ContractsAddressReadJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ContractsAddressReadResponse, error)
-
-	// GetApiV1DeploymentsWithResponse request
-	GetApiV1DeploymentsWithResponse(ctx context.Context, params *GetApiV1DeploymentsParams, reqEditors ...RequestEditorFn) (*GetApiV1DeploymentsResponse, error)
-
-	// PostApiV1DeploymentsWithBodyWithResponse request with any body
-	PostApiV1DeploymentsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1DeploymentsResponse, error)
-
-	PostApiV1DeploymentsWithResponse(ctx context.Context, body PostApiV1DeploymentsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1DeploymentsResponse, error)
-
-	// PostApiV1DeploymentsPlanWithBodyWithResponse request with any body
-	PostApiV1DeploymentsPlanWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1DeploymentsPlanResponse, error)
-
-	PostApiV1DeploymentsPlanWithResponse(ctx context.Context, body PostApiV1DeploymentsPlanJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1DeploymentsPlanResponse, error)
-
-	// GetApiV1EventsWithResponse request
-	GetApiV1EventsWithResponse(ctx context.Context, params *GetApiV1EventsParams, reqEditors ...RequestEditorFn) (*GetApiV1EventsResponse, error)
-
 	// GetApiV1ExampleWithResponse request
 	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
 
 	// GetApiV1FleetTestWithResponse request
 	GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error)
 
-	// PostApiV1TransactionsWithBodyWithResponse request with any body
-	PostApiV1TransactionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1TransactionsResponse, error)
+	// GetApiV1ThirdPartiesWithResponse request
+	GetApiV1ThirdPartiesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesResponse, error)
 
-	PostApiV1TransactionsWithResponse(ctx context.Context, body PostApiV1TransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1TransactionsResponse, error)
+	// PostApiV1ThirdPartiesPromoteWithResponse request
+	PostApiV1ThirdPartiesPromoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1ThirdPartiesPromoteResponse, error)
 
-	// PostApiV1TransactionsSimulateWithBodyWithResponse request with any body
-	PostApiV1TransactionsSimulateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1TransactionsSimulateResponse, error)
-
-	PostApiV1TransactionsSimulateWithResponse(ctx context.Context, body PostApiV1TransactionsSimulateJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1TransactionsSimulateResponse, error)
-
-	// GetApiV1TransactionsHashWithResponse request
-	GetApiV1TransactionsHashWithResponse(ctx context.Context, hash string, reqEditors ...RequestEditorFn) (*GetApiV1TransactionsHashResponse, error)
+	// GetApiV1ThirdPartiesNameWithResponse request
+	GetApiV1ThirdPartiesNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesNameResponse, error)
 
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
 
 	// GetHealthReadyWithResponse request
 	GetHealthReadyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthReadyResponse, error)
-}
-
-type GetApiV1ChainStatusResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *BlockchainChainStatus
-	JSON503      *map[string]string
-}
-
-// Status returns HTTPResponse.Status
-func (r GetApiV1ChainStatusResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1ChainStatusResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetApiV1ContractsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *HandlersListResponseDto
-}
-
-// Status returns HTTPResponse.Status
-func (r GetApiV1ContractsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1ContractsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostApiV1ContractsAddressReadResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *BlockchainReadResult
-	JSON404      *map[string]string
-}
-
-// Status returns HTTPResponse.Status
-func (r PostApiV1ContractsAddressReadResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1ContractsAddressReadResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetApiV1DeploymentsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *HandlersListResponseDto
-}
-
-// Status returns HTTPResponse.Status
-func (r GetApiV1DeploymentsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1DeploymentsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostApiV1DeploymentsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON202      *BlockchainDeployResult
-	JSON400      *map[string]string
-	JSON404      *map[string]string
-	JSON422      *BlockchainPlanResult
-	JSON502      *map[string]string
-	JSON503      *map[string]string
-}
-
-// Status returns HTTPResponse.Status
-func (r PostApiV1DeploymentsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1DeploymentsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostApiV1DeploymentsPlanResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *BlockchainPlanResult
-	JSON400      *map[string]string
-	JSON404      *map[string]string
-	JSON503      *map[string]string
-}
-
-// Status returns HTTPResponse.Status
-func (r PostApiV1DeploymentsPlanResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1DeploymentsPlanResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetApiV1EventsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *HandlersListResponseDto
-}
-
-// Status returns HTTPResponse.Status
-func (r GetApiV1EventsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1EventsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
 }
 
 type GetApiV1ExampleResponse struct {
@@ -1535,18 +536,14 @@ func (r GetApiV1FleetTestResponse) StatusCode() int {
 	return 0
 }
 
-type PostApiV1TransactionsResponse struct {
+type GetApiV1ThirdPartiesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON202      *BlockchainSubmitResult
-	JSON400      *map[string]string
-	JSON404      *map[string]string
-	JSON502      *map[string]string
-	JSON503      *map[string]string
+	JSON200      *map[string]interface{}
 }
 
 // Status returns HTTPResponse.Status
-func (r PostApiV1TransactionsResponse) Status() string {
+func (r GetApiV1ThirdPartiesResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1554,24 +551,22 @@ func (r PostApiV1TransactionsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1TransactionsResponse) StatusCode() int {
+func (r GetApiV1ThirdPartiesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PostApiV1TransactionsSimulateResponse struct {
+type PostApiV1ThirdPartiesPromoteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *BlockchainSimulateResult
+	JSON201      *ProvidersPromoteResult
 	JSON400      *map[string]string
-	JSON404      *map[string]string
-	JSON503      *map[string]string
 }
 
 // Status returns HTTPResponse.Status
-func (r PostApiV1TransactionsSimulateResponse) Status() string {
+func (r PostApiV1ThirdPartiesPromoteResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1579,22 +574,21 @@ func (r PostApiV1TransactionsSimulateResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1TransactionsSimulateResponse) StatusCode() int {
+func (r PostApiV1ThirdPartiesPromoteResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetApiV1TransactionsHashResponse struct {
+type GetApiV1ThirdPartiesNameResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *BlockchainTransaction
-	JSON404      *map[string]string
+	JSON200      *map[string]interface{}
 }
 
 // Status returns HTTPResponse.Status
-func (r GetApiV1TransactionsHashResponse) Status() string {
+func (r GetApiV1ThirdPartiesNameResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1602,7 +596,7 @@ func (r GetApiV1TransactionsHashResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1TransactionsHashResponse) StatusCode() int {
+func (r GetApiV1ThirdPartiesNameResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1651,93 +645,6 @@ func (r GetHealthReadyResponse) StatusCode() int {
 	return 0
 }
 
-// GetApiV1ChainStatusWithResponse request returning *GetApiV1ChainStatusResponse
-func (c *ClientWithResponses) GetApiV1ChainStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ChainStatusResponse, error) {
-	rsp, err := c.GetApiV1ChainStatus(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1ChainStatusResponse(rsp)
-}
-
-// GetApiV1ContractsWithResponse request returning *GetApiV1ContractsResponse
-func (c *ClientWithResponses) GetApiV1ContractsWithResponse(ctx context.Context, params *GetApiV1ContractsParams, reqEditors ...RequestEditorFn) (*GetApiV1ContractsResponse, error) {
-	rsp, err := c.GetApiV1Contracts(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1ContractsResponse(rsp)
-}
-
-// PostApiV1ContractsAddressReadWithBodyWithResponse request with arbitrary body returning *PostApiV1ContractsAddressReadResponse
-func (c *ClientWithResponses) PostApiV1ContractsAddressReadWithBodyWithResponse(ctx context.Context, address string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ContractsAddressReadResponse, error) {
-	rsp, err := c.PostApiV1ContractsAddressReadWithBody(ctx, address, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostApiV1ContractsAddressReadResponse(rsp)
-}
-
-func (c *ClientWithResponses) PostApiV1ContractsAddressReadWithResponse(ctx context.Context, address string, body PostApiV1ContractsAddressReadJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1ContractsAddressReadResponse, error) {
-	rsp, err := c.PostApiV1ContractsAddressRead(ctx, address, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostApiV1ContractsAddressReadResponse(rsp)
-}
-
-// GetApiV1DeploymentsWithResponse request returning *GetApiV1DeploymentsResponse
-func (c *ClientWithResponses) GetApiV1DeploymentsWithResponse(ctx context.Context, params *GetApiV1DeploymentsParams, reqEditors ...RequestEditorFn) (*GetApiV1DeploymentsResponse, error) {
-	rsp, err := c.GetApiV1Deployments(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1DeploymentsResponse(rsp)
-}
-
-// PostApiV1DeploymentsWithBodyWithResponse request with arbitrary body returning *PostApiV1DeploymentsResponse
-func (c *ClientWithResponses) PostApiV1DeploymentsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1DeploymentsResponse, error) {
-	rsp, err := c.PostApiV1DeploymentsWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostApiV1DeploymentsResponse(rsp)
-}
-
-func (c *ClientWithResponses) PostApiV1DeploymentsWithResponse(ctx context.Context, body PostApiV1DeploymentsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1DeploymentsResponse, error) {
-	rsp, err := c.PostApiV1Deployments(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostApiV1DeploymentsResponse(rsp)
-}
-
-// PostApiV1DeploymentsPlanWithBodyWithResponse request with arbitrary body returning *PostApiV1DeploymentsPlanResponse
-func (c *ClientWithResponses) PostApiV1DeploymentsPlanWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1DeploymentsPlanResponse, error) {
-	rsp, err := c.PostApiV1DeploymentsPlanWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostApiV1DeploymentsPlanResponse(rsp)
-}
-
-func (c *ClientWithResponses) PostApiV1DeploymentsPlanWithResponse(ctx context.Context, body PostApiV1DeploymentsPlanJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1DeploymentsPlanResponse, error) {
-	rsp, err := c.PostApiV1DeploymentsPlan(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostApiV1DeploymentsPlanResponse(rsp)
-}
-
-// GetApiV1EventsWithResponse request returning *GetApiV1EventsResponse
-func (c *ClientWithResponses) GetApiV1EventsWithResponse(ctx context.Context, params *GetApiV1EventsParams, reqEditors ...RequestEditorFn) (*GetApiV1EventsResponse, error) {
-	rsp, err := c.GetApiV1Events(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1EventsResponse(rsp)
-}
-
 // GetApiV1ExampleWithResponse request returning *GetApiV1ExampleResponse
 func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error) {
 	rsp, err := c.GetApiV1Example(ctx, reqEditors...)
@@ -1756,47 +663,31 @@ func (c *ClientWithResponses) GetApiV1FleetTestWithResponse(ctx context.Context,
 	return ParseGetApiV1FleetTestResponse(rsp)
 }
 
-// PostApiV1TransactionsWithBodyWithResponse request with arbitrary body returning *PostApiV1TransactionsResponse
-func (c *ClientWithResponses) PostApiV1TransactionsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1TransactionsResponse, error) {
-	rsp, err := c.PostApiV1TransactionsWithBody(ctx, contentType, body, reqEditors...)
+// GetApiV1ThirdPartiesWithResponse request returning *GetApiV1ThirdPartiesResponse
+func (c *ClientWithResponses) GetApiV1ThirdPartiesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesResponse, error) {
+	rsp, err := c.GetApiV1ThirdParties(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1TransactionsResponse(rsp)
+	return ParseGetApiV1ThirdPartiesResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostApiV1TransactionsWithResponse(ctx context.Context, body PostApiV1TransactionsJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1TransactionsResponse, error) {
-	rsp, err := c.PostApiV1Transactions(ctx, body, reqEditors...)
+// PostApiV1ThirdPartiesPromoteWithResponse request returning *PostApiV1ThirdPartiesPromoteResponse
+func (c *ClientWithResponses) PostApiV1ThirdPartiesPromoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1ThirdPartiesPromoteResponse, error) {
+	rsp, err := c.PostApiV1ThirdPartiesPromote(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1TransactionsResponse(rsp)
+	return ParsePostApiV1ThirdPartiesPromoteResponse(rsp)
 }
 
-// PostApiV1TransactionsSimulateWithBodyWithResponse request with arbitrary body returning *PostApiV1TransactionsSimulateResponse
-func (c *ClientWithResponses) PostApiV1TransactionsSimulateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1TransactionsSimulateResponse, error) {
-	rsp, err := c.PostApiV1TransactionsSimulateWithBody(ctx, contentType, body, reqEditors...)
+// GetApiV1ThirdPartiesNameWithResponse request returning *GetApiV1ThirdPartiesNameResponse
+func (c *ClientWithResponses) GetApiV1ThirdPartiesNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesNameResponse, error) {
+	rsp, err := c.GetApiV1ThirdPartiesName(ctx, name, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostApiV1TransactionsSimulateResponse(rsp)
-}
-
-func (c *ClientWithResponses) PostApiV1TransactionsSimulateWithResponse(ctx context.Context, body PostApiV1TransactionsSimulateJSONRequestBody, reqEditors ...RequestEditorFn) (*PostApiV1TransactionsSimulateResponse, error) {
-	rsp, err := c.PostApiV1TransactionsSimulate(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostApiV1TransactionsSimulateResponse(rsp)
-}
-
-// GetApiV1TransactionsHashWithResponse request returning *GetApiV1TransactionsHashResponse
-func (c *ClientWithResponses) GetApiV1TransactionsHashWithResponse(ctx context.Context, hash string, reqEditors ...RequestEditorFn) (*GetApiV1TransactionsHashResponse, error) {
-	rsp, err := c.GetApiV1TransactionsHash(ctx, hash, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1TransactionsHashResponse(rsp)
+	return ParseGetApiV1ThirdPartiesNameResponse(rsp)
 }
 
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
@@ -1815,258 +706,6 @@ func (c *ClientWithResponses) GetHealthReadyWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseGetHealthReadyResponse(rsp)
-}
-
-// ParseGetApiV1ChainStatusResponse parses an HTTP response from a GetApiV1ChainStatusWithResponse call
-func ParseGetApiV1ChainStatusResponse(rsp *http.Response) (*GetApiV1ChainStatusResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetApiV1ChainStatusResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BlockchainChainStatus
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON503 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetApiV1ContractsResponse parses an HTTP response from a GetApiV1ContractsWithResponse call
-func ParseGetApiV1ContractsResponse(rsp *http.Response) (*GetApiV1ContractsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetApiV1ContractsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HandlersListResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePostApiV1ContractsAddressReadResponse parses an HTTP response from a PostApiV1ContractsAddressReadWithResponse call
-func ParsePostApiV1ContractsAddressReadResponse(rsp *http.Response) (*PostApiV1ContractsAddressReadResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostApiV1ContractsAddressReadResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BlockchainReadResult
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetApiV1DeploymentsResponse parses an HTTP response from a GetApiV1DeploymentsWithResponse call
-func ParseGetApiV1DeploymentsResponse(rsp *http.Response) (*GetApiV1DeploymentsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetApiV1DeploymentsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HandlersListResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePostApiV1DeploymentsResponse parses an HTTP response from a PostApiV1DeploymentsWithResponse call
-func ParsePostApiV1DeploymentsResponse(rsp *http.Response) (*PostApiV1DeploymentsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostApiV1DeploymentsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
-		var dest BlockchainDeployResult
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON202 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest BlockchainPlanResult
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON502 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON503 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePostApiV1DeploymentsPlanResponse parses an HTTP response from a PostApiV1DeploymentsPlanWithResponse call
-func ParsePostApiV1DeploymentsPlanResponse(rsp *http.Response) (*PostApiV1DeploymentsPlanResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostApiV1DeploymentsPlanResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BlockchainPlanResult
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON503 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetApiV1EventsResponse parses an HTTP response from a GetApiV1EventsWithResponse call
-func ParseGetApiV1EventsResponse(rsp *http.Response) (*GetApiV1EventsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetApiV1EventsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HandlersListResponseDto
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
 }
 
 // ParseGetApiV1ExampleResponse parses an HTTP response from a GetApiV1ExampleWithResponse call
@@ -2135,26 +774,52 @@ func ParseGetApiV1FleetTestResponse(rsp *http.Response) (*GetApiV1FleetTestRespo
 	return response, nil
 }
 
-// ParsePostApiV1TransactionsResponse parses an HTTP response from a PostApiV1TransactionsWithResponse call
-func ParsePostApiV1TransactionsResponse(rsp *http.Response) (*PostApiV1TransactionsResponse, error) {
+// ParseGetApiV1ThirdPartiesResponse parses an HTTP response from a GetApiV1ThirdPartiesWithResponse call
+func ParseGetApiV1ThirdPartiesResponse(rsp *http.Response) (*GetApiV1ThirdPartiesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostApiV1TransactionsResponse{
+	response := &GetApiV1ThirdPartiesResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
-		var dest BlockchainSubmitResult
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON202 = &dest
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostApiV1ThirdPartiesPromoteResponse parses an HTTP response from a PostApiV1ThirdPartiesPromoteWithResponse call
+func ParsePostApiV1ThirdPartiesPromoteResponse(rsp *http.Response) (*PostApiV1ThirdPartiesPromoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostApiV1ThirdPartiesPromoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ProvidersPromoteResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest map[string]string
@@ -2163,106 +828,31 @@ func ParsePostApiV1TransactionsResponse(rsp *http.Response) (*PostApiV1Transacti
 		}
 		response.JSON400 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON502 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON503 = &dest
-
 	}
 
 	return response, nil
 }
 
-// ParsePostApiV1TransactionsSimulateResponse parses an HTTP response from a PostApiV1TransactionsSimulateWithResponse call
-func ParsePostApiV1TransactionsSimulateResponse(rsp *http.Response) (*PostApiV1TransactionsSimulateResponse, error) {
+// ParseGetApiV1ThirdPartiesNameResponse parses an HTTP response from a GetApiV1ThirdPartiesNameWithResponse call
+func ParseGetApiV1ThirdPartiesNameResponse(rsp *http.Response) (*GetApiV1ThirdPartiesNameResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostApiV1TransactionsSimulateResponse{
+	response := &GetApiV1ThirdPartiesNameResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BlockchainSimulateResult
+		var dest map[string]interface{}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON503 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetApiV1TransactionsHashResponse parses an HTTP response from a GetApiV1TransactionsHashWithResponse call
-func ParseGetApiV1TransactionsHashResponse(rsp *http.Response) (*GetApiV1TransactionsHashResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetApiV1TransactionsHashResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BlockchainTransaction
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
 
 	}
 
