@@ -13,6 +13,43 @@ type MockClientWithResponsesInterface struct {
 	mock.Mock
 }
 
+// GetApiV1BaLastWithResponse provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientWithResponsesInterface) GetApiV1BaLastWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1BaLastResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetApiV1BaLastWithResponse")
+	}
+
+	var r0 *GetApiV1BaLastResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*GetApiV1BaLastResponse, error)); ok {
+		return rf(ctx, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *GetApiV1BaLastResponse); ok {
+		r0 = rf(ctx, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*GetApiV1BaLastResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetApiV1ExampleWithResponse provides a mock function with given fields: ctx, reqEditors
 func (_m *MockClientWithResponsesInterface) GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
@@ -50,8 +87,8 @@ func (_m *MockClientWithResponsesInterface) GetApiV1ExampleWithResponse(ctx cont
 	return r0, r1
 }
 
-// GetApiV1FleetTestWithResponse provides a mock function with given fields: ctx, reqEditors
-func (_m *MockClientWithResponsesInterface) GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error) {
+// GetApiV1ShellPromptWithResponse provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientWithResponsesInterface) GetApiV1ShellPromptWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ShellPromptResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -62,19 +99,19 @@ func (_m *MockClientWithResponsesInterface) GetApiV1FleetTestWithResponse(ctx co
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetApiV1FleetTestWithResponse")
+		panic("no return value specified for GetApiV1ShellPromptWithResponse")
 	}
 
-	var r0 *GetApiV1FleetTestResponse
+	var r0 *GetApiV1ShellPromptResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*GetApiV1FleetTestResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*GetApiV1ShellPromptResponse, error)); ok {
 		return rf(ctx, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *GetApiV1FleetTestResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *GetApiV1ShellPromptResponse); ok {
 		r0 = rf(ctx, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*GetApiV1FleetTestResponse)
+			r0 = ret.Get(0).(*GetApiV1ShellPromptResponse)
 		}
 	}
 
@@ -87,8 +124,8 @@ func (_m *MockClientWithResponsesInterface) GetApiV1FleetTestWithResponse(ctx co
 	return r0, r1
 }
 
-// GetApiV1ThirdPartiesNameWithResponse provides a mock function with given fields: ctx, name, reqEditors
-func (_m *MockClientWithResponsesInterface) GetApiV1ThirdPartiesNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesNameResponse, error) {
+// GetClientsNameWithResponse provides a mock function with given fields: ctx, name, reqEditors
+func (_m *MockClientWithResponsesInterface) GetClientsNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetClientsNameResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -99,19 +136,19 @@ func (_m *MockClientWithResponsesInterface) GetApiV1ThirdPartiesNameWithResponse
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetApiV1ThirdPartiesNameWithResponse")
+		panic("no return value specified for GetClientsNameWithResponse")
 	}
 
-	var r0 *GetApiV1ThirdPartiesNameResponse
+	var r0 *GetClientsNameResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*GetApiV1ThirdPartiesNameResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*GetClientsNameResponse, error)); ok {
 		return rf(ctx, name, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *GetApiV1ThirdPartiesNameResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *GetClientsNameResponse); ok {
 		r0 = rf(ctx, name, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*GetApiV1ThirdPartiesNameResponse)
+			r0 = ret.Get(0).(*GetClientsNameResponse)
 		}
 	}
 
@@ -124,8 +161,8 @@ func (_m *MockClientWithResponsesInterface) GetApiV1ThirdPartiesNameWithResponse
 	return r0, r1
 }
 
-// GetApiV1ThirdPartiesWithResponse provides a mock function with given fields: ctx, reqEditors
-func (_m *MockClientWithResponsesInterface) GetApiV1ThirdPartiesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesResponse, error) {
+// GetClientsWithResponse provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientWithResponsesInterface) GetClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetClientsResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -136,19 +173,19 @@ func (_m *MockClientWithResponsesInterface) GetApiV1ThirdPartiesWithResponse(ctx
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetApiV1ThirdPartiesWithResponse")
+		panic("no return value specified for GetClientsWithResponse")
 	}
 
-	var r0 *GetApiV1ThirdPartiesResponse
+	var r0 *GetClientsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*GetApiV1ThirdPartiesResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*GetClientsResponse, error)); ok {
 		return rf(ctx, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *GetApiV1ThirdPartiesResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *GetClientsResponse); ok {
 		r0 = rf(ctx, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*GetApiV1ThirdPartiesResponse)
+			r0 = ret.Get(0).(*GetClientsResponse)
 		}
 	}
 
@@ -235,8 +272,8 @@ func (_m *MockClientWithResponsesInterface) GetHealthReadyWithResponse(ctx conte
 	return r0, r1
 }
 
-// PostApiV1ThirdPartiesPromoteWithResponse provides a mock function with given fields: ctx, reqEditors
-func (_m *MockClientWithResponsesInterface) PostApiV1ThirdPartiesPromoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1ThirdPartiesPromoteResponse, error) {
+// PostApiV1BaTickWithResponse provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientWithResponsesInterface) PostApiV1BaTickWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1BaTickResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -247,19 +284,19 @@ func (_m *MockClientWithResponsesInterface) PostApiV1ThirdPartiesPromoteWithResp
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1ThirdPartiesPromoteWithResponse")
+		panic("no return value specified for PostApiV1BaTickWithResponse")
 	}
 
-	var r0 *PostApiV1ThirdPartiesPromoteResponse
+	var r0 *PostApiV1BaTickResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*PostApiV1ThirdPartiesPromoteResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*PostApiV1BaTickResponse, error)); ok {
 		return rf(ctx, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *PostApiV1ThirdPartiesPromoteResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *PostApiV1BaTickResponse); ok {
 		r0 = rf(ctx, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostApiV1ThirdPartiesPromoteResponse)
+			r0 = ret.Get(0).(*PostApiV1BaTickResponse)
 		}
 	}
 
