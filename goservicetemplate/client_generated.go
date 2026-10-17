@@ -11,7 +11,44 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/oapi-codegen/runtime"
 )
+
+const (
+	BearerAuthScopes = "BearerAuth.Scopes"
+)
+
+// HandlersExampleResponseDto defines model for handlers.ExampleResponseDto.
+type HandlersExampleResponseDto struct {
+	Message *string `json:"message,omitempty"`
+	Service *string `json:"service,omitempty"`
+}
+
+// HandlersFleetTestResponseDto defines model for handlers.fleetTestResponseDto.
+type HandlersFleetTestResponseDto struct {
+	Results *[]HandlersPeerResult `json:"results,omitempty"`
+	Success *bool                 `json:"success,omitempty"`
+	Summary *string               `json:"summary,omitempty"`
+}
+
+// HandlersPeerResult defines model for handlers.peerResult.
+type HandlersPeerResult struct {
+	DurationMs *int    `json:"duration_ms,omitempty"`
+	HttpCode   *int    `json:"http_code,omitempty"`
+	Message    *string `json:"message,omitempty"`
+	Ok         *bool   `json:"ok,omitempty"`
+	Peer       *string `json:"peer,omitempty"`
+}
+
+// ProvidersPromoteResult defines model for providers.PromoteResult.
+type ProvidersPromoteResult struct {
+	// PendingUntilMerged PendingUntilMerged is true in the seed-store phase: the entry does
+	// not answer until the promote-PR merges, which is the whole point —
+	// a finding nobody reviewed must not become an integration contract.
+	PendingUntilMerged *bool   `json:"pending_until_merged,omitempty"`
+	PromotePr          *string `json:"promote_pr,omitempty"`
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -86,14 +123,86 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetApiV1Example request
+	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1FleetTest request
+	GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1ThirdParties request
+	GetApiV1ThirdParties(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostApiV1ThirdPartiesPromote request
+	PostApiV1ThirdPartiesPromote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1ThirdPartiesName request
+	GetApiV1ThirdPartiesName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthReady request
 	GetHealthReady(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
 
-	// PostLighthouseEvents request
-	PostLighthouseEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ExampleRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1FleetTestRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1ThirdParties(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ThirdPartiesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1ThirdPartiesPromote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1ThirdPartiesPromoteRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1ThirdPartiesName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ThirdPartiesNameRequest(c.Server, name)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -120,16 +229,146 @@ func (c *Client) GetHealthReady(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostLighthouseEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostLighthouseEventsRequest(c.Server)
+// NewGetApiV1ExampleRequest generates requests for GetApiV1Example
+func NewGetApiV1ExampleRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+
+	operationPath := fmt.Sprintf("/api/v1/example")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
 		return nil, err
 	}
-	return c.Client.Do(req)
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1FleetTestRequest generates requests for GetApiV1FleetTest
+func NewGetApiV1FleetTestRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/fleet-test")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1ThirdPartiesRequest generates requests for GetApiV1ThirdParties
+func NewGetApiV1ThirdPartiesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/third-parties")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostApiV1ThirdPartiesPromoteRequest generates requests for PostApiV1ThirdPartiesPromote
+func NewPostApiV1ThirdPartiesPromoteRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/third-parties/promote")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1ThirdPartiesNameRequest generates requests for GetApiV1ThirdPartiesName
+func NewGetApiV1ThirdPartiesNameRequest(server string, name string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/third-parties/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewGetHealthLiveRequest generates requests for GetHealthLive
@@ -186,33 +425,6 @@ func NewGetHealthReadyRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewPostLighthouseEventsRequest generates requests for PostLighthouseEvents
-func NewPostLighthouseEventsRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/lighthouse/events")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -256,14 +468,139 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetApiV1ExampleWithResponse request
+	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
+
+	// GetApiV1FleetTestWithResponse request
+	GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error)
+
+	// GetApiV1ThirdPartiesWithResponse request
+	GetApiV1ThirdPartiesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesResponse, error)
+
+	// PostApiV1ThirdPartiesPromoteWithResponse request
+	PostApiV1ThirdPartiesPromoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1ThirdPartiesPromoteResponse, error)
+
+	// GetApiV1ThirdPartiesNameWithResponse request
+	GetApiV1ThirdPartiesNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesNameResponse, error)
+
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
 
 	// GetHealthReadyWithResponse request
 	GetHealthReadyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthReadyResponse, error)
+}
 
-	// PostLighthouseEventsWithResponse request
-	PostLighthouseEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostLighthouseEventsResponse, error)
+type GetApiV1ExampleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersExampleResponseDto
+	JSON401      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1ExampleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1ExampleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1FleetTestResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersFleetTestResponseDto
+	JSON401      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1FleetTestResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1FleetTestResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1ThirdPartiesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1ThirdPartiesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1ThirdPartiesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostApiV1ThirdPartiesPromoteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ProvidersPromoteResult
+	JSON400      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostApiV1ThirdPartiesPromoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostApiV1ThirdPartiesPromoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1ThirdPartiesNameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1ThirdPartiesNameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1ThirdPartiesNameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetHealthLiveResponse struct {
@@ -308,27 +645,49 @@ func (r GetHealthReadyResponse) StatusCode() int {
 	return 0
 }
 
-type PostLighthouseEventsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *map[string]string
-	JSON401      *map[string]string
+// GetApiV1ExampleWithResponse request returning *GetApiV1ExampleResponse
+func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error) {
+	rsp, err := c.GetApiV1Example(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1ExampleResponse(rsp)
 }
 
-// Status returns HTTPResponse.Status
-func (r PostLighthouseEventsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
+// GetApiV1FleetTestWithResponse request returning *GetApiV1FleetTestResponse
+func (c *ClientWithResponses) GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error) {
+	rsp, err := c.GetApiV1FleetTest(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
 	}
-	return http.StatusText(0)
+	return ParseGetApiV1FleetTestResponse(rsp)
 }
 
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostLighthouseEventsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
+// GetApiV1ThirdPartiesWithResponse request returning *GetApiV1ThirdPartiesResponse
+func (c *ClientWithResponses) GetApiV1ThirdPartiesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesResponse, error) {
+	rsp, err := c.GetApiV1ThirdParties(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
 	}
-	return 0
+	return ParseGetApiV1ThirdPartiesResponse(rsp)
+}
+
+// PostApiV1ThirdPartiesPromoteWithResponse request returning *PostApiV1ThirdPartiesPromoteResponse
+func (c *ClientWithResponses) PostApiV1ThirdPartiesPromoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1ThirdPartiesPromoteResponse, error) {
+	rsp, err := c.PostApiV1ThirdPartiesPromote(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostApiV1ThirdPartiesPromoteResponse(rsp)
+}
+
+// GetApiV1ThirdPartiesNameWithResponse request returning *GetApiV1ThirdPartiesNameResponse
+func (c *ClientWithResponses) GetApiV1ThirdPartiesNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1ThirdPartiesNameResponse, error) {
+	rsp, err := c.GetApiV1ThirdPartiesName(ctx, name, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1ThirdPartiesNameResponse(rsp)
 }
 
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
@@ -349,13 +708,155 @@ func (c *ClientWithResponses) GetHealthReadyWithResponse(ctx context.Context, re
 	return ParseGetHealthReadyResponse(rsp)
 }
 
-// PostLighthouseEventsWithResponse request returning *PostLighthouseEventsResponse
-func (c *ClientWithResponses) PostLighthouseEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostLighthouseEventsResponse, error) {
-	rsp, err := c.PostLighthouseEvents(ctx, reqEditors...)
+// ParseGetApiV1ExampleResponse parses an HTTP response from a GetApiV1ExampleWithResponse call
+func ParseGetApiV1ExampleResponse(rsp *http.Response) (*GetApiV1ExampleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostLighthouseEventsResponse(rsp)
+
+	response := &GetApiV1ExampleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersExampleResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1FleetTestResponse parses an HTTP response from a GetApiV1FleetTestWithResponse call
+func ParseGetApiV1FleetTestResponse(rsp *http.Response) (*GetApiV1FleetTestResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1FleetTestResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersFleetTestResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1ThirdPartiesResponse parses an HTTP response from a GetApiV1ThirdPartiesWithResponse call
+func ParseGetApiV1ThirdPartiesResponse(rsp *http.Response) (*GetApiV1ThirdPartiesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1ThirdPartiesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostApiV1ThirdPartiesPromoteResponse parses an HTTP response from a PostApiV1ThirdPartiesPromoteWithResponse call
+func ParsePostApiV1ThirdPartiesPromoteResponse(rsp *http.Response) (*PostApiV1ThirdPartiesPromoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostApiV1ThirdPartiesPromoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ProvidersPromoteResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1ThirdPartiesNameResponse parses an HTTP response from a GetApiV1ThirdPartiesNameWithResponse call
+func ParseGetApiV1ThirdPartiesNameResponse(rsp *http.Response) (*GetApiV1ThirdPartiesNameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1ThirdPartiesNameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetHealthLiveResponse parses an HTTP response from a GetHealthLiveWithResponse call
@@ -385,39 +886,6 @@ func ParseGetHealthReadyResponse(rsp *http.Response) (*GetHealthReadyResponse, e
 	response := &GetHealthReadyResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParsePostLighthouseEventsResponse parses an HTTP response from a PostLighthouseEventsWithResponse call
-func ParsePostLighthouseEventsResponse(rsp *http.Response) (*PostLighthouseEventsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostLighthouseEventsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
 	}
 
 	return response, nil
