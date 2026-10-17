@@ -6,8 +6,6 @@ import (
 	context "context"
 	http "net/http"
 
-	io "io"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -16,8 +14,8 @@ type MockClientInterface struct {
 	mock.Mock
 }
 
-// GetApiV1ChainStatus provides a mock function with given fields: ctx, reqEditors
-func (_m *MockClientInterface) GetApiV1ChainStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// GetApiV1CapabilitiesLanguages provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) GetApiV1CapabilitiesLanguages(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -28,7 +26,7 @@ func (_m *MockClientInterface) GetApiV1ChainStatus(ctx context.Context, reqEdito
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetApiV1ChainStatus")
+		panic("no return value specified for GetApiV1CapabilitiesLanguages")
 	}
 
 	var r0 *http.Response
@@ -53,36 +51,36 @@ func (_m *MockClientInterface) GetApiV1ChainStatus(ctx context.Context, reqEdito
 	return r0, r1
 }
 
-// GetApiV1Contracts provides a mock function with given fields: ctx, params, reqEditors
-func (_m *MockClientInterface) GetApiV1Contracts(ctx context.Context, params *GetApiV1ContractsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// GetApiV1CapabilitiesLanguagesName provides a mock function with given fields: ctx, name, reqEditors
+func (_m *MockClientInterface) GetApiV1CapabilitiesLanguagesName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, params)
+	_ca = append(_ca, ctx, name)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetApiV1Contracts")
+		panic("no return value specified for GetApiV1CapabilitiesLanguagesName")
 	}
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *GetApiV1ContractsParams, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, name, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *GetApiV1ContractsParams, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, name, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *GetApiV1ContractsParams, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, name, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -90,36 +88,36 @@ func (_m *MockClientInterface) GetApiV1Contracts(ctx context.Context, params *Ge
 	return r0, r1
 }
 
-// GetApiV1Deployments provides a mock function with given fields: ctx, params, reqEditors
-func (_m *MockClientInterface) GetApiV1Deployments(ctx context.Context, params *GetApiV1DeploymentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// GetApiV1CapabilitiesStores provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) GetApiV1CapabilitiesStores(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, params)
+	_ca = append(_ca, ctx)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetApiV1Deployments")
+		panic("no return value specified for GetApiV1CapabilitiesStores")
 	}
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *GetApiV1DeploymentsParams, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *GetApiV1DeploymentsParams, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *GetApiV1DeploymentsParams, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -127,36 +125,36 @@ func (_m *MockClientInterface) GetApiV1Deployments(ctx context.Context, params *
 	return r0, r1
 }
 
-// GetApiV1Events provides a mock function with given fields: ctx, params, reqEditors
-func (_m *MockClientInterface) GetApiV1Events(ctx context.Context, params *GetApiV1EventsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// GetApiV1CapabilitiesStoresName provides a mock function with given fields: ctx, name, reqEditors
+func (_m *MockClientInterface) GetApiV1CapabilitiesStoresName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, params)
+	_ca = append(_ca, ctx, name)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetApiV1Events")
+		panic("no return value specified for GetApiV1CapabilitiesStoresName")
 	}
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *GetApiV1EventsParams, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, name, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *GetApiV1EventsParams, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, name, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *GetApiV1EventsParams, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, params, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, name, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -238,43 +236,6 @@ func (_m *MockClientInterface) GetApiV1FleetTest(ctx context.Context, reqEditors
 	return r0, r1
 }
 
-// GetApiV1TransactionsHash provides a mock function with given fields: ctx, hash, reqEditors
-func (_m *MockClientInterface) GetApiV1TransactionsHash(ctx context.Context, hash string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, hash)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetApiV1TransactionsHash")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, hash, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, hash, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, hash, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetHealthLive provides a mock function with given fields: ctx, reqEditors
 func (_m *MockClientInterface) GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
@@ -349,369 +310,36 @@ func (_m *MockClientInterface) GetHealthReady(ctx context.Context, reqEditors ..
 	return r0, r1
 }
 
-// PostApiV1ContractsAddressRead provides a mock function with given fields: ctx, address, body, reqEditors
-func (_m *MockClientInterface) PostApiV1ContractsAddressRead(ctx context.Context, address string, body HandlersReadContractRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// PostApiV1CapabilitiesPromote provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) PostApiV1CapabilitiesPromote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, address, body)
+	_ca = append(_ca, ctx)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1ContractsAddressRead")
+		panic("no return value specified for PostApiV1CapabilitiesPromote")
 	}
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, HandlersReadContractRequest, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, address, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, HandlersReadContractRequest, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, address, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, HandlersReadContractRequest, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, address, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostApiV1ContractsAddressReadWithBody provides a mock function with given fields: ctx, address, contentType, body, reqEditors
-func (_m *MockClientInterface) PostApiV1ContractsAddressReadWithBody(ctx context.Context, address string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, address, contentType, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1ContractsAddressReadWithBody")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, address, contentType, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, address, contentType, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, address, contentType, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostApiV1Deployments provides a mock function with given fields: ctx, body, reqEditors
-func (_m *MockClientInterface) PostApiV1Deployments(ctx context.Context, body BlockchainPlanRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1Deployments")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, BlockchainPlanRequest, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, BlockchainPlanRequest, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, BlockchainPlanRequest, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostApiV1DeploymentsPlan provides a mock function with given fields: ctx, body, reqEditors
-func (_m *MockClientInterface) PostApiV1DeploymentsPlan(ctx context.Context, body BlockchainPlanRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1DeploymentsPlan")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, BlockchainPlanRequest, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, BlockchainPlanRequest, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, BlockchainPlanRequest, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostApiV1DeploymentsPlanWithBody provides a mock function with given fields: ctx, contentType, body, reqEditors
-func (_m *MockClientInterface) PostApiV1DeploymentsPlanWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, contentType, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1DeploymentsPlanWithBody")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, contentType, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, contentType, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, contentType, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostApiV1DeploymentsWithBody provides a mock function with given fields: ctx, contentType, body, reqEditors
-func (_m *MockClientInterface) PostApiV1DeploymentsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, contentType, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1DeploymentsWithBody")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, contentType, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, contentType, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, contentType, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostApiV1Transactions provides a mock function with given fields: ctx, body, reqEditors
-func (_m *MockClientInterface) PostApiV1Transactions(ctx context.Context, body BlockchainSubmitRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1Transactions")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, BlockchainSubmitRequest, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, BlockchainSubmitRequest, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, BlockchainSubmitRequest, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostApiV1TransactionsSimulate provides a mock function with given fields: ctx, body, reqEditors
-func (_m *MockClientInterface) PostApiV1TransactionsSimulate(ctx context.Context, body map[string]interface{}, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1TransactionsSimulate")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostApiV1TransactionsSimulateWithBody provides a mock function with given fields: ctx, contentType, body, reqEditors
-func (_m *MockClientInterface) PostApiV1TransactionsSimulateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, contentType, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1TransactionsSimulateWithBody")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, contentType, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, contentType, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, contentType, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostApiV1TransactionsWithBody provides a mock function with given fields: ctx, contentType, body, reqEditors
-func (_m *MockClientInterface) PostApiV1TransactionsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, contentType, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostApiV1TransactionsWithBody")
-	}
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
-		return rf(ctx, contentType, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
-		r0 = rf(ctx, contentType, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, contentType, body, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
