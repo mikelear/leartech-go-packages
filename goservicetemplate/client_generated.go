@@ -19,10 +19,37 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
-// CapabilitiesPromoteResult defines model for capabilities.PromoteResult.
-type CapabilitiesPromoteResult struct {
-	PendingUntilMerged *bool   `json:"pending_until_merged,omitempty"`
-	PromotePr          *string `json:"promote_pr,omitempty"`
+// HandlersBAPass defines model for handlers.BAPass.
+type HandlersBAPass struct {
+	// Answered questions closed this pass (0 or 1 — one per pass)
+	Answered *int    `json:"answered,omitempty"`
+	At       *string `json:"at,omitempty"`
+
+	// Error the failure, verbatim, when the pass failed
+	Error *string `json:"error,omitempty"`
+
+	// Exhausted R1 tripped; nothing picked up
+	Exhausted *bool `json:"exhausted,omitempty"`
+
+	// Pr the finding PR, when one was filed
+	Pr *string `json:"pr,omitempty"`
+}
+
+// HandlersClientBinary defines model for handlers.ClientBinary.
+type HandlersClientBinary struct {
+	Arch   *string `json:"arch,omitempty"`
+	Bytes  *int    `json:"bytes,omitempty"`
+	Name   *string `json:"name,omitempty"`
+	Os     *string `json:"os,omitempty"`
+	Sha256 *string `json:"sha256,omitempty"`
+	Url    *string `json:"url,omitempty"`
+}
+
+// HandlersClientsResponseDto defines model for handlers.ClientsResponseDto.
+type HandlersClientsResponseDto struct {
+	ChecksumsUrl *string                 `json:"checksums_url,omitempty"`
+	Clients      *[]HandlersClientBinary `json:"clients,omitempty"`
+	Version      *string                 `json:"version,omitempty"`
 }
 
 // HandlersExampleResponseDto defines model for handlers.ExampleResponseDto.
@@ -31,20 +58,30 @@ type HandlersExampleResponseDto struct {
 	Service *string `json:"service,omitempty"`
 }
 
-// HandlersFleetTestResponseDto defines model for handlers.fleetTestResponseDto.
-type HandlersFleetTestResponseDto struct {
-	Results *[]HandlersPeerResult `json:"results,omitempty"`
-	Success *bool                 `json:"success,omitempty"`
-	Summary *string               `json:"summary,omitempty"`
-}
+// HandlersShellPrompt defines model for handlers.ShellPrompt.
+type HandlersShellPrompt struct {
+	// Label Label is the human name for this prompt, if the cluster set one.
+	// Free text for a reader; Revision is what identifies it.
+	Label *string `json:"label,omitempty"`
 
-// HandlersPeerResult defines model for handlers.peerResult.
-type HandlersPeerResult struct {
-	DurationMs *int    `json:"duration_ms,omitempty"`
-	HttpCode   *int    `json:"http_code,omitempty"`
-	Message    *string `json:"message,omitempty"`
-	Ok         *bool   `json:"ok,omitempty"`
-	Peer       *string `json:"peer,omitempty"`
+	// Prompt Prompt is the system prompt, or empty when this cluster sets none.
+	Prompt *string `json:"prompt,omitempty"`
+
+	// Revision Revision identifies this exact text.
+	//
+	// A content hash, not a hand-set number. // proven-by: TestShellPrompt_RevisionIsDerivedFromTheContent
+	// A version someone has to remember to bump goes stale quietly, and
+	// two different prompts claiming one revision make every session
+	// recorded against it unreadable. Derived from the bytes, so it
+	// agrees with what was served.
+	//
+	// proven-by: TestShellPrompt_RevisionIsDerivedFromTheContent
+	// proven-by: TestShellPrompt_DifferentPromptsNeverShareARevision
+	Revision *string `json:"revision,omitempty"`
+
+	// Source Source names where the value came from, for a client that has to
+	// tell an operator which prompt it is running.
+	Source *string `json:"source,omitempty"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -120,26 +157,23 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetApiV1CapabilitiesLanguages request
-	GetApiV1CapabilitiesLanguages(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetApiV1BaLast request
+	GetApiV1BaLast(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetApiV1CapabilitiesLanguagesName request
-	GetApiV1CapabilitiesLanguagesName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PostApiV1CapabilitiesPromote request
-	PostApiV1CapabilitiesPromote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetApiV1CapabilitiesStores request
-	GetApiV1CapabilitiesStores(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetApiV1CapabilitiesStoresName request
-	GetApiV1CapabilitiesStoresName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostApiV1BaTick request
+	PostApiV1BaTick(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetApiV1Example request
 	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetApiV1FleetTest request
-	GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetApiV1ShellPrompt request
+	GetApiV1ShellPrompt(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClients request
+	GetClients(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClientsName request
+	GetClientsName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -148,8 +182,8 @@ type ClientInterface interface {
 	GetHealthReady(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) GetApiV1CapabilitiesLanguages(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1CapabilitiesLanguagesRequest(c.Server)
+func (c *Client) GetApiV1BaLast(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1BaLastRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -160,44 +194,8 @@ func (c *Client) GetApiV1CapabilitiesLanguages(ctx context.Context, reqEditors .
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetApiV1CapabilitiesLanguagesName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1CapabilitiesLanguagesNameRequest(c.Server, name)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PostApiV1CapabilitiesPromote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostApiV1CapabilitiesPromoteRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetApiV1CapabilitiesStores(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1CapabilitiesStoresRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetApiV1CapabilitiesStoresName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1CapabilitiesStoresNameRequest(c.Server, name)
+func (c *Client) PostApiV1BaTick(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1BaTickRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +218,32 @@ func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEdito
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1FleetTestRequest(c.Server)
+func (c *Client) GetApiV1ShellPrompt(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ShellPromptRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClients(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClientsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClientsName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClientsNameRequest(c.Server, name)
 	if err != nil {
 		return nil, err
 	}
@@ -256,8 +278,8 @@ func (c *Client) GetHealthReady(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-// NewGetApiV1CapabilitiesLanguagesRequest generates requests for GetApiV1CapabilitiesLanguages
-func NewGetApiV1CapabilitiesLanguagesRequest(server string) (*http.Request, error) {
+// NewGetApiV1BaLastRequest generates requests for GetApiV1BaLast
+func NewGetApiV1BaLastRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -265,7 +287,7 @@ func NewGetApiV1CapabilitiesLanguagesRequest(server string) (*http.Request, erro
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/v1/capabilities/languages")
+	operationPath := fmt.Sprintf("/api/v1/ba/last")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -283,42 +305,8 @@ func NewGetApiV1CapabilitiesLanguagesRequest(server string) (*http.Request, erro
 	return req, nil
 }
 
-// NewGetApiV1CapabilitiesLanguagesNameRequest generates requests for GetApiV1CapabilitiesLanguagesName
-func NewGetApiV1CapabilitiesLanguagesNameRequest(server string, name string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/capabilities/languages/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewPostApiV1CapabilitiesPromoteRequest generates requests for PostApiV1CapabilitiesPromote
-func NewPostApiV1CapabilitiesPromoteRequest(server string) (*http.Request, error) {
+// NewPostApiV1BaTickRequest generates requests for PostApiV1BaTick
+func NewPostApiV1BaTickRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -326,7 +314,7 @@ func NewPostApiV1CapabilitiesPromoteRequest(server string) (*http.Request, error
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/v1/capabilities/promote")
+	operationPath := fmt.Sprintf("/api/v1/ba/tick")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -337,67 +325,6 @@ func NewPostApiV1CapabilitiesPromoteRequest(server string) (*http.Request, error
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetApiV1CapabilitiesStoresRequest generates requests for GetApiV1CapabilitiesStores
-func NewGetApiV1CapabilitiesStoresRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/capabilities/stores")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetApiV1CapabilitiesStoresNameRequest generates requests for GetApiV1CapabilitiesStoresName
-func NewGetApiV1CapabilitiesStoresNameRequest(server string, name string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/capabilities/stores/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -432,8 +359,8 @@ func NewGetApiV1ExampleRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewGetApiV1FleetTestRequest generates requests for GetApiV1FleetTest
-func NewGetApiV1FleetTestRequest(server string) (*http.Request, error) {
+// NewGetApiV1ShellPromptRequest generates requests for GetApiV1ShellPrompt
+func NewGetApiV1ShellPromptRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -441,7 +368,68 @@ func NewGetApiV1FleetTestRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/v1/fleet-test")
+	operationPath := fmt.Sprintf("/api/v1/shell/prompt")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClientsRequest generates requests for GetClients
+func NewGetClientsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clients")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClientsNameRequest generates requests for GetClientsName
+func NewGetClientsNameRequest(server string, name string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clients/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -556,26 +544,23 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetApiV1CapabilitiesLanguagesWithResponse request
-	GetApiV1CapabilitiesLanguagesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesLanguagesResponse, error)
+	// GetApiV1BaLastWithResponse request
+	GetApiV1BaLastWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1BaLastResponse, error)
 
-	// GetApiV1CapabilitiesLanguagesNameWithResponse request
-	GetApiV1CapabilitiesLanguagesNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesLanguagesNameResponse, error)
-
-	// PostApiV1CapabilitiesPromoteWithResponse request
-	PostApiV1CapabilitiesPromoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1CapabilitiesPromoteResponse, error)
-
-	// GetApiV1CapabilitiesStoresWithResponse request
-	GetApiV1CapabilitiesStoresWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesStoresResponse, error)
-
-	// GetApiV1CapabilitiesStoresNameWithResponse request
-	GetApiV1CapabilitiesStoresNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesStoresNameResponse, error)
+	// PostApiV1BaTickWithResponse request
+	PostApiV1BaTickWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1BaTickResponse, error)
 
 	// GetApiV1ExampleWithResponse request
 	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
 
-	// GetApiV1FleetTestWithResponse request
-	GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error)
+	// GetApiV1ShellPromptWithResponse request
+	GetApiV1ShellPromptWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ShellPromptResponse, error)
+
+	// GetClientsWithResponse request
+	GetClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetClientsResponse, error)
+
+	// GetClientsNameWithResponse request
+	GetClientsNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetClientsNameResponse, error)
 
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
@@ -584,14 +569,15 @@ type ClientWithResponsesInterface interface {
 	GetHealthReadyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthReadyResponse, error)
 }
 
-type GetApiV1CapabilitiesLanguagesResponse struct {
+type GetApiV1BaLastResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *map[string]interface{}
+	JSON200      *HandlersBAPass
+	JSON404      *map[string]string
 }
 
 // Status returns HTTPResponse.Status
-func (r GetApiV1CapabilitiesLanguagesResponse) Status() string {
+func (r GetApiV1BaLastResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -599,21 +585,22 @@ func (r GetApiV1CapabilitiesLanguagesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1CapabilitiesLanguagesResponse) StatusCode() int {
+func (r GetApiV1BaLastResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetApiV1CapabilitiesLanguagesNameResponse struct {
+type PostApiV1BaTickResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *map[string]interface{}
+	JSON200      *HandlersBAPass
+	JSON500      *map[string]string
 }
 
 // Status returns HTTPResponse.Status
-func (r GetApiV1CapabilitiesLanguagesNameResponse) Status() string {
+func (r PostApiV1BaTickResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -621,74 +608,7 @@ func (r GetApiV1CapabilitiesLanguagesNameResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1CapabilitiesLanguagesNameResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type PostApiV1CapabilitiesPromoteResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *CapabilitiesPromoteResult
-	JSON400      *map[string]string
-}
-
-// Status returns HTTPResponse.Status
-func (r PostApiV1CapabilitiesPromoteResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostApiV1CapabilitiesPromoteResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetApiV1CapabilitiesStoresResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *map[string]interface{}
-}
-
-// Status returns HTTPResponse.Status
-func (r GetApiV1CapabilitiesStoresResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1CapabilitiesStoresResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetApiV1CapabilitiesStoresNameResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *map[string]interface{}
-}
-
-// Status returns HTTPResponse.Status
-func (r GetApiV1CapabilitiesStoresNameResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1CapabilitiesStoresNameResponse) StatusCode() int {
+func (r PostApiV1BaTickResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -718,15 +638,14 @@ func (r GetApiV1ExampleResponse) StatusCode() int {
 	return 0
 }
 
-type GetApiV1FleetTestResponse struct {
+type GetApiV1ShellPromptResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *HandlersFleetTestResponseDto
-	JSON401      *map[string]string
+	JSON200      *HandlersShellPrompt
 }
 
 // Status returns HTTPResponse.Status
-func (r GetApiV1FleetTestResponse) Status() string {
+func (r GetApiV1ShellPromptResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -734,7 +653,52 @@ func (r GetApiV1FleetTestResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1FleetTestResponse) StatusCode() int {
+func (r GetApiV1ShellPromptResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClientsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersClientsResponseDto
+	JSON401      *map[string]string
+	JSON501      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClientsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClientsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClientsNameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClientsNameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClientsNameResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -783,49 +747,22 @@ func (r GetHealthReadyResponse) StatusCode() int {
 	return 0
 }
 
-// GetApiV1CapabilitiesLanguagesWithResponse request returning *GetApiV1CapabilitiesLanguagesResponse
-func (c *ClientWithResponses) GetApiV1CapabilitiesLanguagesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesLanguagesResponse, error) {
-	rsp, err := c.GetApiV1CapabilitiesLanguages(ctx, reqEditors...)
+// GetApiV1BaLastWithResponse request returning *GetApiV1BaLastResponse
+func (c *ClientWithResponses) GetApiV1BaLastWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1BaLastResponse, error) {
+	rsp, err := c.GetApiV1BaLast(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetApiV1CapabilitiesLanguagesResponse(rsp)
+	return ParseGetApiV1BaLastResponse(rsp)
 }
 
-// GetApiV1CapabilitiesLanguagesNameWithResponse request returning *GetApiV1CapabilitiesLanguagesNameResponse
-func (c *ClientWithResponses) GetApiV1CapabilitiesLanguagesNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesLanguagesNameResponse, error) {
-	rsp, err := c.GetApiV1CapabilitiesLanguagesName(ctx, name, reqEditors...)
+// PostApiV1BaTickWithResponse request returning *PostApiV1BaTickResponse
+func (c *ClientWithResponses) PostApiV1BaTickWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1BaTickResponse, error) {
+	rsp, err := c.PostApiV1BaTick(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetApiV1CapabilitiesLanguagesNameResponse(rsp)
-}
-
-// PostApiV1CapabilitiesPromoteWithResponse request returning *PostApiV1CapabilitiesPromoteResponse
-func (c *ClientWithResponses) PostApiV1CapabilitiesPromoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1CapabilitiesPromoteResponse, error) {
-	rsp, err := c.PostApiV1CapabilitiesPromote(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePostApiV1CapabilitiesPromoteResponse(rsp)
-}
-
-// GetApiV1CapabilitiesStoresWithResponse request returning *GetApiV1CapabilitiesStoresResponse
-func (c *ClientWithResponses) GetApiV1CapabilitiesStoresWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesStoresResponse, error) {
-	rsp, err := c.GetApiV1CapabilitiesStores(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1CapabilitiesStoresResponse(rsp)
-}
-
-// GetApiV1CapabilitiesStoresNameWithResponse request returning *GetApiV1CapabilitiesStoresNameResponse
-func (c *ClientWithResponses) GetApiV1CapabilitiesStoresNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesStoresNameResponse, error) {
-	rsp, err := c.GetApiV1CapabilitiesStoresName(ctx, name, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetApiV1CapabilitiesStoresNameResponse(rsp)
+	return ParsePostApiV1BaTickResponse(rsp)
 }
 
 // GetApiV1ExampleWithResponse request returning *GetApiV1ExampleResponse
@@ -837,13 +774,31 @@ func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, r
 	return ParseGetApiV1ExampleResponse(rsp)
 }
 
-// GetApiV1FleetTestWithResponse request returning *GetApiV1FleetTestResponse
-func (c *ClientWithResponses) GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error) {
-	rsp, err := c.GetApiV1FleetTest(ctx, reqEditors...)
+// GetApiV1ShellPromptWithResponse request returning *GetApiV1ShellPromptResponse
+func (c *ClientWithResponses) GetApiV1ShellPromptWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ShellPromptResponse, error) {
+	rsp, err := c.GetApiV1ShellPrompt(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetApiV1FleetTestResponse(rsp)
+	return ParseGetApiV1ShellPromptResponse(rsp)
+}
+
+// GetClientsWithResponse request returning *GetClientsResponse
+func (c *ClientWithResponses) GetClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetClientsResponse, error) {
+	rsp, err := c.GetClients(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClientsResponse(rsp)
+}
+
+// GetClientsNameWithResponse request returning *GetClientsNameResponse
+func (c *ClientWithResponses) GetClientsNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetClientsNameResponse, error) {
+	rsp, err := c.GetClientsName(ctx, name, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClientsNameResponse(rsp)
 }
 
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
@@ -864,137 +819,66 @@ func (c *ClientWithResponses) GetHealthReadyWithResponse(ctx context.Context, re
 	return ParseGetHealthReadyResponse(rsp)
 }
 
-// ParseGetApiV1CapabilitiesLanguagesResponse parses an HTTP response from a GetApiV1CapabilitiesLanguagesWithResponse call
-func ParseGetApiV1CapabilitiesLanguagesResponse(rsp *http.Response) (*GetApiV1CapabilitiesLanguagesResponse, error) {
+// ParseGetApiV1BaLastResponse parses an HTTP response from a GetApiV1BaLastWithResponse call
+func ParseGetApiV1BaLastResponse(rsp *http.Response) (*GetApiV1BaLastResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetApiV1CapabilitiesLanguagesResponse{
+	response := &GetApiV1BaLastResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]interface{}
+		var dest HandlersBAPass
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParseGetApiV1CapabilitiesLanguagesNameResponse parses an HTTP response from a GetApiV1CapabilitiesLanguagesNameWithResponse call
-func ParseGetApiV1CapabilitiesLanguagesNameResponse(rsp *http.Response) (*GetApiV1CapabilitiesLanguagesNameResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetApiV1CapabilitiesLanguagesNameResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]interface{}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePostApiV1CapabilitiesPromoteResponse parses an HTTP response from a PostApiV1CapabilitiesPromoteWithResponse call
-func ParsePostApiV1CapabilitiesPromoteResponse(rsp *http.Response) (*PostApiV1CapabilitiesPromoteResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostApiV1CapabilitiesPromoteResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest CapabilitiesPromoteResult
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest map[string]string
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON400 = &dest
+		response.JSON404 = &dest
 
 	}
 
 	return response, nil
 }
 
-// ParseGetApiV1CapabilitiesStoresResponse parses an HTTP response from a GetApiV1CapabilitiesStoresWithResponse call
-func ParseGetApiV1CapabilitiesStoresResponse(rsp *http.Response) (*GetApiV1CapabilitiesStoresResponse, error) {
+// ParsePostApiV1BaTickResponse parses an HTTP response from a PostApiV1BaTickWithResponse call
+func ParsePostApiV1BaTickResponse(rsp *http.Response) (*PostApiV1BaTickResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetApiV1CapabilitiesStoresResponse{
+	response := &PostApiV1BaTickResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]interface{}
+		var dest HandlersBAPass
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParseGetApiV1CapabilitiesStoresNameResponse parses an HTTP response from a GetApiV1CapabilitiesStoresNameWithResponse call
-func ParseGetApiV1CapabilitiesStoresNameResponse(rsp *http.Response) (*GetApiV1CapabilitiesStoresNameResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetApiV1CapabilitiesStoresNameResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]interface{}
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest map[string]string
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON500 = &dest
 
 	}
 
@@ -1034,22 +918,48 @@ func ParseGetApiV1ExampleResponse(rsp *http.Response) (*GetApiV1ExampleResponse,
 	return response, nil
 }
 
-// ParseGetApiV1FleetTestResponse parses an HTTP response from a GetApiV1FleetTestWithResponse call
-func ParseGetApiV1FleetTestResponse(rsp *http.Response) (*GetApiV1FleetTestResponse, error) {
+// ParseGetApiV1ShellPromptResponse parses an HTTP response from a GetApiV1ShellPromptWithResponse call
+func ParseGetApiV1ShellPromptResponse(rsp *http.Response) (*GetApiV1ShellPromptResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetApiV1FleetTestResponse{
+	response := &GetApiV1ShellPromptResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HandlersFleetTestResponseDto
+		var dest HandlersShellPrompt
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClientsResponse parses an HTTP response from a GetClientsWithResponse call
+func ParseGetClientsResponse(rsp *http.Response) (*GetClientsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClientsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersClientsResponseDto
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1062,6 +972,29 @@ func ParseGetApiV1FleetTestResponse(rsp *http.Response) (*GetApiV1FleetTestRespo
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClientsNameResponse parses an HTTP response from a GetClientsNameWithResponse call
+func ParseGetClientsNameResponse(rsp *http.Response) (*GetClientsNameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClientsNameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
