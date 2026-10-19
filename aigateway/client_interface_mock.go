@@ -793,6 +793,80 @@ func (_m *MockClientInterface) PostV1Search(ctx context.Context, reqEditors ...R
 	return r0, r1
 }
 
+// PostV1SessionsTransform provides a mock function with given fields: ctx, body, reqEditors
+func (_m *MockClientInterface) PostV1SessionsTransform(ctx context.Context, body ApiTransformSessionRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostV1SessionsTransform")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ApiTransformSessionRequest, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ApiTransformSessionRequest, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ApiTransformSessionRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PostV1SessionsTransformWithBody provides a mock function with given fields: ctx, contentType, body, reqEditors
+func (_m *MockClientInterface) PostV1SessionsTransformWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, contentType, body)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostV1SessionsTransformWithBody")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, contentType, body, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, contentType, body, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PutAdminV1KeysKeyidBudget provides a mock function with given fields: ctx, keyid, body, reqEditors
 func (_m *MockClientInterface) PutAdminV1KeysKeyidBudget(ctx context.Context, keyid string, body ApiSetBudgetRequest, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
