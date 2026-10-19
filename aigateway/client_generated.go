@@ -372,6 +372,10 @@ type ApiTransformReport struct {
 	// TargetMaxCtx TargetMaxCtx is the target model's advertised context window, the ceiling
 	// the transform fit the session under.
 	TargetMaxCtx *int `json:"target_max_ctx,omitempty"`
+
+	// ToolIdsRekeyed ToolIDsRekeyed is how many tool-call ids were rewritten to a neutral
+	// format so the call/result pairing survives a cross-provider switch.
+	ToolIdsRekeyed *int `json:"tool_ids_rekeyed,omitempty"`
 }
 
 // ApiTransformSessionRequest defines model for api.TransformSessionRequest.
