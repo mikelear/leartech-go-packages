@@ -11,7 +11,41 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/oapi-codegen/runtime"
 )
+
+const (
+	BearerAuthScopes = "BearerAuth.Scopes"
+)
+
+// CapabilitiesPromoteResult defines model for capabilities.PromoteResult.
+type CapabilitiesPromoteResult struct {
+	PendingUntilMerged *bool   `json:"pending_until_merged,omitempty"`
+	PromotePr          *string `json:"promote_pr,omitempty"`
+}
+
+// HandlersExampleResponseDto defines model for handlers.ExampleResponseDto.
+type HandlersExampleResponseDto struct {
+	Message *string `json:"message,omitempty"`
+	Service *string `json:"service,omitempty"`
+}
+
+// HandlersFleetTestResponseDto defines model for handlers.fleetTestResponseDto.
+type HandlersFleetTestResponseDto struct {
+	Results *[]HandlersPeerResult `json:"results,omitempty"`
+	Success *bool                 `json:"success,omitempty"`
+	Summary *string               `json:"summary,omitempty"`
+}
+
+// HandlersPeerResult defines model for handlers.peerResult.
+type HandlersPeerResult struct {
+	DurationMs *int    `json:"duration_ms,omitempty"`
+	HttpCode   *int    `json:"http_code,omitempty"`
+	Message    *string `json:"message,omitempty"`
+	Ok         *bool   `json:"ok,omitempty"`
+	Peer       *string `json:"peer,omitempty"`
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -86,14 +120,116 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetApiV1CapabilitiesLanguages request
+	GetApiV1CapabilitiesLanguages(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1CapabilitiesLanguagesName request
+	GetApiV1CapabilitiesLanguagesName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostApiV1CapabilitiesPromote request
+	PostApiV1CapabilitiesPromote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1CapabilitiesStores request
+	GetApiV1CapabilitiesStores(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1CapabilitiesStoresName request
+	GetApiV1CapabilitiesStoresName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1Example request
+	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApiV1FleetTest request
+	GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthReady request
 	GetHealthReady(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
 
-	// PostLighthouseEvents request
-	PostLighthouseEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+func (c *Client) GetApiV1CapabilitiesLanguages(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1CapabilitiesLanguagesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1CapabilitiesLanguagesName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1CapabilitiesLanguagesNameRequest(c.Server, name)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostApiV1CapabilitiesPromote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostApiV1CapabilitiesPromoteRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1CapabilitiesStores(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1CapabilitiesStoresRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1CapabilitiesStoresName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1CapabilitiesStoresNameRequest(c.Server, name)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ExampleRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1FleetTestRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -120,16 +256,207 @@ func (c *Client) GetHealthReady(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostLighthouseEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostLighthouseEventsRequest(c.Server)
+// NewGetApiV1CapabilitiesLanguagesRequest generates requests for GetApiV1CapabilitiesLanguages
+func NewGetApiV1CapabilitiesLanguagesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+
+	operationPath := fmt.Sprintf("/api/v1/capabilities/languages")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
 		return nil, err
 	}
-	return c.Client.Do(req)
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1CapabilitiesLanguagesNameRequest generates requests for GetApiV1CapabilitiesLanguagesName
+func NewGetApiV1CapabilitiesLanguagesNameRequest(server string, name string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/capabilities/languages/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostApiV1CapabilitiesPromoteRequest generates requests for PostApiV1CapabilitiesPromote
+func NewPostApiV1CapabilitiesPromoteRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/capabilities/promote")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1CapabilitiesStoresRequest generates requests for GetApiV1CapabilitiesStores
+func NewGetApiV1CapabilitiesStoresRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/capabilities/stores")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1CapabilitiesStoresNameRequest generates requests for GetApiV1CapabilitiesStoresName
+func NewGetApiV1CapabilitiesStoresNameRequest(server string, name string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/capabilities/stores/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1ExampleRequest generates requests for GetApiV1Example
+func NewGetApiV1ExampleRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/example")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApiV1FleetTestRequest generates requests for GetApiV1FleetTest
+func NewGetApiV1FleetTestRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/fleet-test")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewGetHealthLiveRequest generates requests for GetHealthLive
@@ -186,33 +513,6 @@ func NewGetHealthReadyRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewPostLighthouseEventsRequest generates requests for PostLighthouseEvents
-func NewPostLighthouseEventsRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/lighthouse/events")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -256,14 +556,189 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetApiV1CapabilitiesLanguagesWithResponse request
+	GetApiV1CapabilitiesLanguagesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesLanguagesResponse, error)
+
+	// GetApiV1CapabilitiesLanguagesNameWithResponse request
+	GetApiV1CapabilitiesLanguagesNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesLanguagesNameResponse, error)
+
+	// PostApiV1CapabilitiesPromoteWithResponse request
+	PostApiV1CapabilitiesPromoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1CapabilitiesPromoteResponse, error)
+
+	// GetApiV1CapabilitiesStoresWithResponse request
+	GetApiV1CapabilitiesStoresWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesStoresResponse, error)
+
+	// GetApiV1CapabilitiesStoresNameWithResponse request
+	GetApiV1CapabilitiesStoresNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesStoresNameResponse, error)
+
+	// GetApiV1ExampleWithResponse request
+	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
+
+	// GetApiV1FleetTestWithResponse request
+	GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error)
+
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
 
 	// GetHealthReadyWithResponse request
 	GetHealthReadyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthReadyResponse, error)
+}
 
-	// PostLighthouseEventsWithResponse request
-	PostLighthouseEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostLighthouseEventsResponse, error)
+type GetApiV1CapabilitiesLanguagesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1CapabilitiesLanguagesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1CapabilitiesLanguagesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1CapabilitiesLanguagesNameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1CapabilitiesLanguagesNameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1CapabilitiesLanguagesNameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostApiV1CapabilitiesPromoteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *CapabilitiesPromoteResult
+	JSON400      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostApiV1CapabilitiesPromoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostApiV1CapabilitiesPromoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1CapabilitiesStoresResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1CapabilitiesStoresResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1CapabilitiesStoresResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1CapabilitiesStoresNameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1CapabilitiesStoresNameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1CapabilitiesStoresNameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1ExampleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersExampleResponseDto
+	JSON401      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1ExampleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1ExampleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApiV1FleetTestResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersFleetTestResponseDto
+	JSON401      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApiV1FleetTestResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApiV1FleetTestResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetHealthLiveResponse struct {
@@ -308,27 +783,67 @@ func (r GetHealthReadyResponse) StatusCode() int {
 	return 0
 }
 
-type PostLighthouseEventsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *map[string]string
-	JSON401      *map[string]string
+// GetApiV1CapabilitiesLanguagesWithResponse request returning *GetApiV1CapabilitiesLanguagesResponse
+func (c *ClientWithResponses) GetApiV1CapabilitiesLanguagesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesLanguagesResponse, error) {
+	rsp, err := c.GetApiV1CapabilitiesLanguages(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1CapabilitiesLanguagesResponse(rsp)
 }
 
-// Status returns HTTPResponse.Status
-func (r PostLighthouseEventsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
+// GetApiV1CapabilitiesLanguagesNameWithResponse request returning *GetApiV1CapabilitiesLanguagesNameResponse
+func (c *ClientWithResponses) GetApiV1CapabilitiesLanguagesNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesLanguagesNameResponse, error) {
+	rsp, err := c.GetApiV1CapabilitiesLanguagesName(ctx, name, reqEditors...)
+	if err != nil {
+		return nil, err
 	}
-	return http.StatusText(0)
+	return ParseGetApiV1CapabilitiesLanguagesNameResponse(rsp)
 }
 
-// StatusCode returns HTTPResponse.StatusCode
-func (r PostLighthouseEventsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
+// PostApiV1CapabilitiesPromoteWithResponse request returning *PostApiV1CapabilitiesPromoteResponse
+func (c *ClientWithResponses) PostApiV1CapabilitiesPromoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostApiV1CapabilitiesPromoteResponse, error) {
+	rsp, err := c.PostApiV1CapabilitiesPromote(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
 	}
-	return 0
+	return ParsePostApiV1CapabilitiesPromoteResponse(rsp)
+}
+
+// GetApiV1CapabilitiesStoresWithResponse request returning *GetApiV1CapabilitiesStoresResponse
+func (c *ClientWithResponses) GetApiV1CapabilitiesStoresWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesStoresResponse, error) {
+	rsp, err := c.GetApiV1CapabilitiesStores(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1CapabilitiesStoresResponse(rsp)
+}
+
+// GetApiV1CapabilitiesStoresNameWithResponse request returning *GetApiV1CapabilitiesStoresNameResponse
+func (c *ClientWithResponses) GetApiV1CapabilitiesStoresNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetApiV1CapabilitiesStoresNameResponse, error) {
+	rsp, err := c.GetApiV1CapabilitiesStoresName(ctx, name, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1CapabilitiesStoresNameResponse(rsp)
+}
+
+// GetApiV1ExampleWithResponse request returning *GetApiV1ExampleResponse
+func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error) {
+	rsp, err := c.GetApiV1Example(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1ExampleResponse(rsp)
+}
+
+// GetApiV1FleetTestWithResponse request returning *GetApiV1FleetTestResponse
+func (c *ClientWithResponses) GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error) {
+	rsp, err := c.GetApiV1FleetTest(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApiV1FleetTestResponse(rsp)
 }
 
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
@@ -349,13 +864,207 @@ func (c *ClientWithResponses) GetHealthReadyWithResponse(ctx context.Context, re
 	return ParseGetHealthReadyResponse(rsp)
 }
 
-// PostLighthouseEventsWithResponse request returning *PostLighthouseEventsResponse
-func (c *ClientWithResponses) PostLighthouseEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostLighthouseEventsResponse, error) {
-	rsp, err := c.PostLighthouseEvents(ctx, reqEditors...)
+// ParseGetApiV1CapabilitiesLanguagesResponse parses an HTTP response from a GetApiV1CapabilitiesLanguagesWithResponse call
+func ParseGetApiV1CapabilitiesLanguagesResponse(rsp *http.Response) (*GetApiV1CapabilitiesLanguagesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostLighthouseEventsResponse(rsp)
+
+	response := &GetApiV1CapabilitiesLanguagesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1CapabilitiesLanguagesNameResponse parses an HTTP response from a GetApiV1CapabilitiesLanguagesNameWithResponse call
+func ParseGetApiV1CapabilitiesLanguagesNameResponse(rsp *http.Response) (*GetApiV1CapabilitiesLanguagesNameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1CapabilitiesLanguagesNameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostApiV1CapabilitiesPromoteResponse parses an HTTP response from a PostApiV1CapabilitiesPromoteWithResponse call
+func ParsePostApiV1CapabilitiesPromoteResponse(rsp *http.Response) (*PostApiV1CapabilitiesPromoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostApiV1CapabilitiesPromoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CapabilitiesPromoteResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1CapabilitiesStoresResponse parses an HTTP response from a GetApiV1CapabilitiesStoresWithResponse call
+func ParseGetApiV1CapabilitiesStoresResponse(rsp *http.Response) (*GetApiV1CapabilitiesStoresResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1CapabilitiesStoresResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1CapabilitiesStoresNameResponse parses an HTTP response from a GetApiV1CapabilitiesStoresNameWithResponse call
+func ParseGetApiV1CapabilitiesStoresNameResponse(rsp *http.Response) (*GetApiV1CapabilitiesStoresNameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1CapabilitiesStoresNameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1ExampleResponse parses an HTTP response from a GetApiV1ExampleWithResponse call
+func ParseGetApiV1ExampleResponse(rsp *http.Response) (*GetApiV1ExampleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1ExampleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersExampleResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApiV1FleetTestResponse parses an HTTP response from a GetApiV1FleetTestWithResponse call
+func ParseGetApiV1FleetTestResponse(rsp *http.Response) (*GetApiV1FleetTestResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApiV1FleetTestResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersFleetTestResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetHealthLiveResponse parses an HTTP response from a GetHealthLiveWithResponse call
@@ -385,39 +1094,6 @@ func ParseGetHealthReadyResponse(rsp *http.Response) (*GetHealthReadyResponse, e
 	response := &GetHealthReadyResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParsePostLighthouseEventsResponse parses an HTTP response from a PostLighthouseEventsWithResponse call
-func ParsePostLighthouseEventsResponse(rsp *http.Response) (*PostLighthouseEventsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PostLighthouseEventsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest map[string]string
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
 	}
 
 	return response, nil
