@@ -345,6 +345,76 @@ type ApiToolsResponseDto struct {
 	Object *string    `json:"object,omitempty"`
 }
 
+// ApiTransformReport defines model for api.TransformReport.
+type ApiTransformReport struct {
+	AfterTokens *int `json:"after_tokens,omitempty"`
+
+	// BeforeTokens BeforeTokens and AfterTokens are the gateway's own estimate (chars/4)
+	// either side, the same arithmetic the context-window gate enforces with.
+	BeforeTokens *int `json:"before_tokens,omitempty"`
+
+	// BridgeAdded BridgeAdded is whether a system "you are continuing a conversation begun
+	// with another model" note was inserted, so the new model understands it is
+	// resuming rather than starting.
+	BridgeAdded *bool `json:"bridge_added,omitempty"`
+
+	// Compacted Compacted is how many tool results were elided to fit the target window,
+	// 0 when the session already fit.
+	Compacted *int `json:"compacted,omitempty"`
+
+	// Fit Fit is whether the session reached the target window with reply headroom.
+	// proven-by: TestTransformForModel_SaysWhenItCannotFit
+	Fit *bool `json:"fit,omitempty"`
+
+	// Notes Notes are human-readable lines describing each change and its reason.
+	Notes *[]string `json:"notes,omitempty"`
+
+	// TargetMaxCtx TargetMaxCtx is the target model's advertised context window, the ceiling
+	// the transform fit the session under.
+	TargetMaxCtx *int `json:"target_max_ctx,omitempty"`
+}
+
+// ApiTransformSessionRequest defines model for api.TransformSessionRequest.
+type ApiTransformSessionRequest struct {
+	// Checkpoint Checkpoint is the saved session, exactly as the shell wrote it — the
+	// agentloop.Checkpoint shape (version, turn, prev_hash, hash, messages).
+	Checkpoint map[string]interface{} `json:"checkpoint"`
+
+	// ReplyHeadroomTokens ReplyHeadroomTokens is how much of the target window to leave free for the
+	// next reply. OPTIONAL; a sensible default is applied. Mirrors the shell's
+	// compact headroom so the two paths size the same way.
+	ReplyHeadroomTokens *int `json:"reply_headroom_tokens,omitempty"`
+
+	// SourceModel SourceModel is the model the session was recorded against, when the
+	// caller knows it. OPTIONAL: it is used only to describe the switch in the
+	// bridge note and the response; the transform does not depend on it, since
+	// the rewrite is driven by the TARGET model's needs.
+	SourceModel *string `json:"source_model,omitempty"`
+
+	// TargetModel TargetModel is the logical model the session should be resumed on. It is
+	// resolved against the caller's catalogue, so an unknown or disallowed
+	// model is refused the same way a chat call would be.
+	TargetModel string `json:"target_model"`
+}
+
+// ApiTransformSessionResponseDto defines model for api.TransformSessionResponseDto.
+type ApiTransformSessionResponseDto struct {
+	// Checkpoint Checkpoint is the rewritten session, ready for the shell to save to a new
+	// resume slot and continue on TargetModel. It re-chains onto the source
+	// (prev_hash = source hash), exactly as compact does, so the switch is one
+	// recorded link rather than a hidden edit.
+	Checkpoint *map[string]interface{} `json:"checkpoint,omitempty"`
+
+	// Object "session.transform"
+	Object *string `json:"object,omitempty"`
+
+	// Report Report names every change, so the switch is auditable.
+	Report *ApiTransformReport `json:"report,omitempty"`
+
+	// TargetModel TargetModel echoes what the session was transformed FOR.
+	TargetModel *string `json:"target_model,omitempty"`
+}
+
 // ApiUsage defines model for api.Usage.
 type ApiUsage struct {
 	CompletionTokens *int              `json:"completion_tokens,omitempty"`
@@ -494,6 +564,9 @@ type PostV1ChatCompletionsJSONRequestBody = ApiChatCompletionRequest
 // PostV1EmbeddingsJSONRequestBody defines body for PostV1Embeddings for application/json ContentType.
 type PostV1EmbeddingsJSONRequestBody = ApiEmbeddingsRequest
 
+// PostV1SessionsTransformJSONRequestBody defines body for PostV1SessionsTransform for application/json ContentType.
+type PostV1SessionsTransformJSONRequestBody = ApiTransformSessionRequest
+
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -621,6 +694,11 @@ type ClientInterface interface {
 
 	// PostV1Search request
 	PostV1Search(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostV1SessionsTransformWithBody request with any body
+	PostV1SessionsTransformWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostV1SessionsTransform(ctx context.Context, body PostV1SessionsTransformJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetV1Tools request
 	GetV1Tools(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -862,6 +940,30 @@ func (c *Client) GetV1Models(ctx context.Context, reqEditors ...RequestEditorFn)
 
 func (c *Client) PostV1Search(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostV1SearchRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostV1SessionsTransformWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1SessionsTransformRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostV1SessionsTransform(ctx context.Context, body PostV1SessionsTransformJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1SessionsTransformRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1406,6 +1508,46 @@ func NewPostV1SearchRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewPostV1SessionsTransformRequest calls the generic PostV1SessionsTransform builder with application/json body
+func NewPostV1SessionsTransformRequest(server string, body PostV1SessionsTransformJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostV1SessionsTransformRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostV1SessionsTransformRequestWithBody generates requests for PostV1SessionsTransform with any type of body
+func NewPostV1SessionsTransformRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/sessions/transform")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetV1ToolsRequest generates requests for GetV1Tools
 func NewGetV1ToolsRequest(server string) (*http.Request, error) {
 	var err error
@@ -1584,6 +1726,11 @@ type ClientWithResponsesInterface interface {
 
 	// PostV1SearchWithResponse request
 	PostV1SearchWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostV1SearchResponse, error)
+
+	// PostV1SessionsTransformWithBodyWithResponse request with any body
+	PostV1SessionsTransformWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1SessionsTransformResponse, error)
+
+	PostV1SessionsTransformWithResponse(ctx context.Context, body PostV1SessionsTransformJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1SessionsTransformResponse, error)
 
 	// GetV1ToolsWithResponse request
 	GetV1ToolsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV1ToolsResponse, error)
@@ -1940,6 +2087,31 @@ func (r PostV1SearchResponse) StatusCode() int {
 	return 0
 }
 
+type PostV1SessionsTransformResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiTransformSessionResponseDto
+	JSON400      *ApiErrorResponseDto
+	JSON403      *ApiErrorResponseDto
+	JSON404      *ApiErrorResponseDto
+}
+
+// Status returns HTTPResponse.Status
+func (r PostV1SessionsTransformResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostV1SessionsTransformResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetV1ToolsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2180,6 +2352,23 @@ func (c *ClientWithResponses) PostV1SearchWithResponse(ctx context.Context, reqE
 		return nil, err
 	}
 	return ParsePostV1SearchResponse(rsp)
+}
+
+// PostV1SessionsTransformWithBodyWithResponse request with arbitrary body returning *PostV1SessionsTransformResponse
+func (c *ClientWithResponses) PostV1SessionsTransformWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1SessionsTransformResponse, error) {
+	rsp, err := c.PostV1SessionsTransformWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV1SessionsTransformResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostV1SessionsTransformWithResponse(ctx context.Context, body PostV1SessionsTransformJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1SessionsTransformResponse, error) {
+	rsp, err := c.PostV1SessionsTransform(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV1SessionsTransformResponse(rsp)
 }
 
 // GetV1ToolsWithResponse request returning *GetV1ToolsResponse
@@ -2690,6 +2879,53 @@ func ParsePostV1SearchResponse(rsp *http.Response) (*PostV1SearchResponse, error
 	response := &PostV1SearchResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParsePostV1SessionsTransformResponse parses an HTTP response from a PostV1SessionsTransformWithResponse call
+func ParsePostV1SessionsTransformResponse(rsp *http.Response) (*PostV1SessionsTransformResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostV1SessionsTransformResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiTransformSessionResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ApiErrorResponseDto
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
