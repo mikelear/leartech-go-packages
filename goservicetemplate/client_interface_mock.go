@@ -51,8 +51,8 @@ func (_m *MockClientInterface) GetApiV1Example(ctx context.Context, reqEditors .
 	return r0, r1
 }
 
-// GetApiV1FleetTest provides a mock function with given fields: ctx, reqEditors
-func (_m *MockClientInterface) GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// GetApiV1ShellPrompt provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) GetApiV1ShellPrompt(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -63,7 +63,7 @@ func (_m *MockClientInterface) GetApiV1FleetTest(ctx context.Context, reqEditors
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetApiV1FleetTest")
+		panic("no return value specified for GetApiV1ShellPrompt")
 	}
 
 	var r0 *http.Response
@@ -81,6 +81,80 @@ func (_m *MockClientInterface) GetApiV1FleetTest(ctx context.Context, reqEditors
 
 	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetClients provides a mock function with given fields: ctx, reqEditors
+func (_m *MockClientInterface) GetClients(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetClients")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetClientsName provides a mock function with given fields: ctx, name, reqEditors
+func (_m *MockClientInterface) GetClientsName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, name)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetClientsName")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*http.Response, error)); ok {
+		return rf(ctx, name, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *http.Response); ok {
+		r0 = rf(ctx, name, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, name, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
