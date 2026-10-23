@@ -11,11 +11,30 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/oapi-codegen/runtime"
 )
 
 const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
+
+// HandlersClientBinary defines model for handlers.ClientBinary.
+type HandlersClientBinary struct {
+	Arch   *string `json:"arch,omitempty"`
+	Bytes  *int    `json:"bytes,omitempty"`
+	Name   *string `json:"name,omitempty"`
+	Os     *string `json:"os,omitempty"`
+	Sha256 *string `json:"sha256,omitempty"`
+	Url    *string `json:"url,omitempty"`
+}
+
+// HandlersClientsResponseDto defines model for handlers.ClientsResponseDto.
+type HandlersClientsResponseDto struct {
+	ChecksumsUrl *string                 `json:"checksums_url,omitempty"`
+	Clients      *[]HandlersClientBinary `json:"clients,omitempty"`
+	Version      *string                 `json:"version,omitempty"`
+}
 
 // HandlersExampleResponseDto defines model for handlers.ExampleResponseDto.
 type HandlersExampleResponseDto struct {
@@ -23,20 +42,30 @@ type HandlersExampleResponseDto struct {
 	Service *string `json:"service,omitempty"`
 }
 
-// HandlersFleetTestResponseDto defines model for handlers.fleetTestResponseDto.
-type HandlersFleetTestResponseDto struct {
-	Results *[]HandlersPeerResult `json:"results,omitempty"`
-	Success *bool                 `json:"success,omitempty"`
-	Summary *string               `json:"summary,omitempty"`
-}
+// HandlersShellPrompt defines model for handlers.ShellPrompt.
+type HandlersShellPrompt struct {
+	// Label Label is the human name for this prompt, if the cluster set one.
+	// Free text for a reader; Revision is what identifies it.
+	Label *string `json:"label,omitempty"`
 
-// HandlersPeerResult defines model for handlers.peerResult.
-type HandlersPeerResult struct {
-	DurationMs *int    `json:"duration_ms,omitempty"`
-	HttpCode   *int    `json:"http_code,omitempty"`
-	Message    *string `json:"message,omitempty"`
-	Ok         *bool   `json:"ok,omitempty"`
-	Peer       *string `json:"peer,omitempty"`
+	// Prompt Prompt is the system prompt, or empty when this cluster sets none.
+	Prompt *string `json:"prompt,omitempty"`
+
+	// Revision Revision identifies this exact text.
+	//
+	// A content hash, not a hand-set number. // proven-by: TestShellPrompt_RevisionIsDerivedFromTheContent
+	// A version someone has to remember to bump goes stale quietly, and
+	// two different prompts claiming one revision make every session
+	// recorded against it unreadable. Derived from the bytes, so it
+	// agrees with what was served.
+	//
+	// proven-by: TestShellPrompt_RevisionIsDerivedFromTheContent
+	// proven-by: TestShellPrompt_DifferentPromptsNeverShareARevision
+	Revision *string `json:"revision,omitempty"`
+
+	// Source Source names where the value came from, for a client that has to
+	// tell an operator which prompt it is running.
+	Source *string `json:"source,omitempty"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -115,8 +144,14 @@ type ClientInterface interface {
 	// GetApiV1Example request
 	GetApiV1Example(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetApiV1FleetTest request
-	GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetApiV1ShellPrompt request
+	GetApiV1ShellPrompt(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClients request
+	GetClients(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClientsName request
+	GetClientsName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealthLive request
 	GetHealthLive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -137,8 +172,32 @@ func (c *Client) GetApiV1Example(ctx context.Context, reqEditors ...RequestEdito
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetApiV1FleetTest(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApiV1FleetTestRequest(c.Server)
+func (c *Client) GetApiV1ShellPrompt(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApiV1ShellPromptRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClients(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClientsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClientsName(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClientsNameRequest(c.Server, name)
 	if err != nil {
 		return nil, err
 	}
@@ -200,8 +259,8 @@ func NewGetApiV1ExampleRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewGetApiV1FleetTestRequest generates requests for GetApiV1FleetTest
-func NewGetApiV1FleetTestRequest(server string) (*http.Request, error) {
+// NewGetApiV1ShellPromptRequest generates requests for GetApiV1ShellPrompt
+func NewGetApiV1ShellPromptRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -209,7 +268,68 @@ func NewGetApiV1FleetTestRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/v1/fleet-test")
+	operationPath := fmt.Sprintf("/api/v1/shell/prompt")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClientsRequest generates requests for GetClients
+func NewGetClientsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clients")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClientsNameRequest generates requests for GetClientsName
+func NewGetClientsNameRequest(server string, name string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clients/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -327,8 +447,14 @@ type ClientWithResponsesInterface interface {
 	// GetApiV1ExampleWithResponse request
 	GetApiV1ExampleWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ExampleResponse, error)
 
-	// GetApiV1FleetTestWithResponse request
-	GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error)
+	// GetApiV1ShellPromptWithResponse request
+	GetApiV1ShellPromptWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ShellPromptResponse, error)
+
+	// GetClientsWithResponse request
+	GetClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetClientsResponse, error)
+
+	// GetClientsNameWithResponse request
+	GetClientsNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetClientsNameResponse, error)
 
 	// GetHealthLiveWithResponse request
 	GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error)
@@ -360,15 +486,14 @@ func (r GetApiV1ExampleResponse) StatusCode() int {
 	return 0
 }
 
-type GetApiV1FleetTestResponse struct {
+type GetApiV1ShellPromptResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *HandlersFleetTestResponseDto
-	JSON401      *map[string]string
+	JSON200      *HandlersShellPrompt
 }
 
 // Status returns HTTPResponse.Status
-func (r GetApiV1FleetTestResponse) Status() string {
+func (r GetApiV1ShellPromptResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -376,7 +501,52 @@ func (r GetApiV1FleetTestResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetApiV1FleetTestResponse) StatusCode() int {
+func (r GetApiV1ShellPromptResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClientsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HandlersClientsResponseDto
+	JSON401      *map[string]string
+	JSON501      *map[string]string
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClientsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClientsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClientsNameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClientsNameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClientsNameResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -434,13 +604,31 @@ func (c *ClientWithResponses) GetApiV1ExampleWithResponse(ctx context.Context, r
 	return ParseGetApiV1ExampleResponse(rsp)
 }
 
-// GetApiV1FleetTestWithResponse request returning *GetApiV1FleetTestResponse
-func (c *ClientWithResponses) GetApiV1FleetTestWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1FleetTestResponse, error) {
-	rsp, err := c.GetApiV1FleetTest(ctx, reqEditors...)
+// GetApiV1ShellPromptWithResponse request returning *GetApiV1ShellPromptResponse
+func (c *ClientWithResponses) GetApiV1ShellPromptWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetApiV1ShellPromptResponse, error) {
+	rsp, err := c.GetApiV1ShellPrompt(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetApiV1FleetTestResponse(rsp)
+	return ParseGetApiV1ShellPromptResponse(rsp)
+}
+
+// GetClientsWithResponse request returning *GetClientsResponse
+func (c *ClientWithResponses) GetClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetClientsResponse, error) {
+	rsp, err := c.GetClients(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClientsResponse(rsp)
+}
+
+// GetClientsNameWithResponse request returning *GetClientsNameResponse
+func (c *ClientWithResponses) GetClientsNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetClientsNameResponse, error) {
+	rsp, err := c.GetClientsName(ctx, name, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClientsNameResponse(rsp)
 }
 
 // GetHealthLiveWithResponse request returning *GetHealthLiveResponse
@@ -494,22 +682,48 @@ func ParseGetApiV1ExampleResponse(rsp *http.Response) (*GetApiV1ExampleResponse,
 	return response, nil
 }
 
-// ParseGetApiV1FleetTestResponse parses an HTTP response from a GetApiV1FleetTestWithResponse call
-func ParseGetApiV1FleetTestResponse(rsp *http.Response) (*GetApiV1FleetTestResponse, error) {
+// ParseGetApiV1ShellPromptResponse parses an HTTP response from a GetApiV1ShellPromptWithResponse call
+func ParseGetApiV1ShellPromptResponse(rsp *http.Response) (*GetApiV1ShellPromptResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetApiV1FleetTestResponse{
+	response := &GetApiV1ShellPromptResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HandlersFleetTestResponseDto
+		var dest HandlersShellPrompt
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClientsResponse parses an HTTP response from a GetClientsWithResponse call
+func ParseGetClientsResponse(rsp *http.Response) (*GetClientsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClientsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HandlersClientsResponseDto
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -522,6 +736,29 @@ func ParseGetApiV1FleetTestResponse(rsp *http.Response) (*GetApiV1FleetTestRespo
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest map[string]string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClientsNameResponse parses an HTTP response from a GetClientsNameWithResponse call
+func ParseGetClientsNameResponse(rsp *http.Response) (*GetClientsNameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClientsNameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
