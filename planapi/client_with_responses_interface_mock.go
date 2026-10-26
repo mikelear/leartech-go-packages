@@ -14,6 +14,80 @@ type MockClientWithResponsesInterface struct {
 	mock.Mock
 }
 
+// GetApiV1ArtifactsIdWithResponse provides a mock function with given fields: ctx, id, reqEditors
+func (_m *MockClientWithResponsesInterface) GetApiV1ArtifactsIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsIdResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetApiV1ArtifactsIdWithResponse")
+	}
+
+	var r0 *GetApiV1ArtifactsIdResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*GetApiV1ArtifactsIdResponse, error)); ok {
+		return rf(ctx, id, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *GetApiV1ArtifactsIdResponse); ok {
+		r0 = rf(ctx, id, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*GetApiV1ArtifactsIdResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetApiV1ArtifactsWithResponse provides a mock function with given fields: ctx, params, reqEditors
+func (_m *MockClientWithResponsesInterface) GetApiV1ArtifactsWithResponse(ctx context.Context, params *GetApiV1ArtifactsParams, reqEditors ...RequestEditorFn) (*GetApiV1ArtifactsResponse, error) {
+	_va := make([]interface{}, len(reqEditors))
+	for _i := range reqEditors {
+		_va[_i] = reqEditors[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, params)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetApiV1ArtifactsWithResponse")
+	}
+
+	var r0 *GetApiV1ArtifactsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *GetApiV1ArtifactsParams, ...RequestEditorFn) (*GetApiV1ArtifactsResponse, error)); ok {
+		return rf(ctx, params, reqEditors...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *GetApiV1ArtifactsParams, ...RequestEditorFn) *GetApiV1ArtifactsResponse); ok {
+		r0 = rf(ctx, params, reqEditors...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*GetApiV1ArtifactsResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *GetApiV1ArtifactsParams, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, params, reqEditors...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetHealthLiveWithResponse provides a mock function with given fields: ctx, reqEditors
 func (_m *MockClientWithResponsesInterface) GetHealthLiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthLiveResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
@@ -88,147 +162,36 @@ func (_m *MockClientWithResponsesInterface) GetHealthReadyWithResponse(ctx conte
 	return r0, r1
 }
 
-// GetPlansNameStepsStepGatesWithResponse provides a mock function with given fields: ctx, name, step, reqEditors
-func (_m *MockClientWithResponsesInterface) GetPlansNameStepsStepGatesWithResponse(ctx context.Context, name string, step string, reqEditors ...RequestEditorFn) (*GetPlansNameStepsStepGatesResponse, error) {
+// PostApiV1ArtifactsIdFinalizeWithBodyWithResponse provides a mock function with given fields: ctx, id, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostApiV1ArtifactsIdFinalizeWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, name, step)
+	_ca = append(_ca, ctx, id, contentType, body)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetPlansNameStepsStepGatesWithResponse")
+		panic("no return value specified for PostApiV1ArtifactsIdFinalizeWithBodyWithResponse")
 	}
 
-	var r0 *GetPlansNameStepsStepGatesResponse
+	var r0 *PostApiV1ArtifactsIdFinalizeResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, ...RequestEditorFn) (*GetPlansNameStepsStepGatesResponse, error)); ok {
-		return rf(ctx, name, step, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error)); ok {
+		return rf(ctx, id, contentType, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, ...RequestEditorFn) *GetPlansNameStepsStepGatesResponse); ok {
-		r0 = rf(ctx, name, step, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *PostApiV1ArtifactsIdFinalizeResponse); ok {
+		r0 = rf(ctx, id, contentType, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*GetPlansNameStepsStepGatesResponse)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, name, step, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetPlansNameWithResponse provides a mock function with given fields: ctx, name, reqEditors
-func (_m *MockClientWithResponsesInterface) GetPlansNameWithResponse(ctx context.Context, name string, reqEditors ...RequestEditorFn) (*GetPlansNameResponse, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, name)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetPlansNameWithResponse")
-	}
-
-	var r0 *GetPlansNameResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) (*GetPlansNameResponse, error)); ok {
-		return rf(ctx, name, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...RequestEditorFn) *GetPlansNameResponse); ok {
-		r0 = rf(ctx, name, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*GetPlansNameResponse)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, name, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetPlansWithResponse provides a mock function with given fields: ctx, reqEditors
-func (_m *MockClientWithResponsesInterface) GetPlansWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetPlansResponse, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetPlansWithResponse")
-	}
-
-	var r0 *GetPlansResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) (*GetPlansResponse, error)); ok {
-		return rf(ctx, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...RequestEditorFn) *GetPlansResponse); ok {
-		r0 = rf(ctx, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*GetPlansResponse)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostPlansNamePauseWithBodyWithResponse provides a mock function with given fields: ctx, name, contentType, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansNamePauseWithBodyWithResponse(ctx context.Context, name string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNamePauseResponse, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, name, contentType, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostPlansNamePauseWithBodyWithResponse")
-	}
-
-	var r0 *PostPlansNamePauseResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*PostPlansNamePauseResponse, error)); ok {
-		return rf(ctx, name, contentType, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *PostPlansNamePauseResponse); ok {
-		r0 = rf(ctx, name, contentType, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansNamePauseResponse)
+			r0 = ret.Get(0).(*PostApiV1ArtifactsIdFinalizeResponse)
 		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, name, contentType, body, reqEditors...)
+		r1 = rf(ctx, id, contentType, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -236,36 +199,36 @@ func (_m *MockClientWithResponsesInterface) PostPlansNamePauseWithBodyWithRespon
 	return r0, r1
 }
 
-// PostPlansNamePauseWithResponse provides a mock function with given fields: ctx, name, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansNamePauseWithResponse(ctx context.Context, name string, body DtoPauseRequest, reqEditors ...RequestEditorFn) (*PostPlansNamePauseResponse, error) {
+// PostApiV1ArtifactsIdFinalizeWithResponse provides a mock function with given fields: ctx, id, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostApiV1ArtifactsIdFinalizeWithResponse(ctx context.Context, id string, body HandlersFinalizeRequest, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, name, body)
+	_ca = append(_ca, ctx, id, body)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PostPlansNamePauseWithResponse")
+		panic("no return value specified for PostApiV1ArtifactsIdFinalizeWithResponse")
 	}
 
-	var r0 *PostPlansNamePauseResponse
+	var r0 *PostApiV1ArtifactsIdFinalizeResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, DtoPauseRequest, ...RequestEditorFn) (*PostPlansNamePauseResponse, error)); ok {
-		return rf(ctx, name, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, HandlersFinalizeRequest, ...RequestEditorFn) (*PostApiV1ArtifactsIdFinalizeResponse, error)); ok {
+		return rf(ctx, id, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, DtoPauseRequest, ...RequestEditorFn) *PostPlansNamePauseResponse); ok {
-		r0 = rf(ctx, name, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, HandlersFinalizeRequest, ...RequestEditorFn) *PostApiV1ArtifactsIdFinalizeResponse); ok {
+		r0 = rf(ctx, id, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansNamePauseResponse)
+			r0 = ret.Get(0).(*PostApiV1ArtifactsIdFinalizeResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, DtoPauseRequest, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, name, body, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, string, HandlersFinalizeRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -273,110 +236,36 @@ func (_m *MockClientWithResponsesInterface) PostPlansNamePauseWithResponse(ctx c
 	return r0, r1
 }
 
-// PostPlansNameStepsStepAdoptPrWithBodyWithResponse provides a mock function with given fields: ctx, name, step, contentType, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansNameStepsStepAdoptPrWithBodyWithResponse(ctx context.Context, name string, step string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error) {
+// PostApiV1ArtifactsIdRevisionsWithBodyWithResponse provides a mock function with given fields: ctx, id, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostApiV1ArtifactsIdRevisionsWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, name, step, contentType, body)
+	_ca = append(_ca, ctx, id, contentType, body)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PostPlansNameStepsStepAdoptPrWithBodyWithResponse")
+		panic("no return value specified for PostApiV1ArtifactsIdRevisionsWithBodyWithResponse")
 	}
 
-	var r0 *PostPlansNameStepsStepAdoptPrResponse
+	var r0 *PostApiV1ArtifactsIdRevisionsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, io.Reader, ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error)); ok {
-		return rf(ctx, name, step, contentType, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error)); ok {
+		return rf(ctx, id, contentType, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, io.Reader, ...RequestEditorFn) *PostPlansNameStepsStepAdoptPrResponse); ok {
-		r0 = rf(ctx, name, step, contentType, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *PostApiV1ArtifactsIdRevisionsResponse); ok {
+		r0 = rf(ctx, id, contentType, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansNameStepsStepAdoptPrResponse)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, name, step, contentType, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostPlansNameStepsStepAdoptPrWithResponse provides a mock function with given fields: ctx, name, step, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansNameStepsStepAdoptPrWithResponse(ctx context.Context, name string, step string, body DtoAdoptPRRequest, reqEditors ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, name, step, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostPlansNameStepsStepAdoptPrWithResponse")
-	}
-
-	var r0 *PostPlansNameStepsStepAdoptPrResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, DtoAdoptPRRequest, ...RequestEditorFn) (*PostPlansNameStepsStepAdoptPrResponse, error)); ok {
-		return rf(ctx, name, step, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, DtoAdoptPRRequest, ...RequestEditorFn) *PostPlansNameStepsStepAdoptPrResponse); ok {
-		r0 = rf(ctx, name, step, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansNameStepsStepAdoptPrResponse)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, DtoAdoptPRRequest, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, name, step, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostPlansNameUnpauseWithBodyWithResponse provides a mock function with given fields: ctx, name, contentType, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansNameUnpauseWithBodyWithResponse(ctx context.Context, name string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansNameUnpauseResponse, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, name, contentType, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostPlansNameUnpauseWithBodyWithResponse")
-	}
-
-	var r0 *PostPlansNameUnpauseResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) (*PostPlansNameUnpauseResponse, error)); ok {
-		return rf(ctx, name, contentType, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) *PostPlansNameUnpauseResponse); ok {
-		r0 = rf(ctx, name, contentType, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansNameUnpauseResponse)
+			r0 = ret.Get(0).(*PostApiV1ArtifactsIdRevisionsResponse)
 		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, name, contentType, body, reqEditors...)
+		r1 = rf(ctx, id, contentType, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -384,36 +273,36 @@ func (_m *MockClientWithResponsesInterface) PostPlansNameUnpauseWithBodyWithResp
 	return r0, r1
 }
 
-// PostPlansNameUnpauseWithResponse provides a mock function with given fields: ctx, name, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansNameUnpauseWithResponse(ctx context.Context, name string, body DtoUnpauseRequest, reqEditors ...RequestEditorFn) (*PostPlansNameUnpauseResponse, error) {
+// PostApiV1ArtifactsIdRevisionsWithResponse provides a mock function with given fields: ctx, id, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostApiV1ArtifactsIdRevisionsWithResponse(ctx context.Context, id string, body HandlersCreateRequest, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, name, body)
+	_ca = append(_ca, ctx, id, body)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PostPlansNameUnpauseWithResponse")
+		panic("no return value specified for PostApiV1ArtifactsIdRevisionsWithResponse")
 	}
 
-	var r0 *PostPlansNameUnpauseResponse
+	var r0 *PostApiV1ArtifactsIdRevisionsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, DtoUnpauseRequest, ...RequestEditorFn) (*PostPlansNameUnpauseResponse, error)); ok {
-		return rf(ctx, name, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, HandlersCreateRequest, ...RequestEditorFn) (*PostApiV1ArtifactsIdRevisionsResponse, error)); ok {
+		return rf(ctx, id, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, DtoUnpauseRequest, ...RequestEditorFn) *PostPlansNameUnpauseResponse); ok {
-		r0 = rf(ctx, name, body, reqEditors...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, HandlersCreateRequest, ...RequestEditorFn) *PostApiV1ArtifactsIdRevisionsResponse); ok {
+		r0 = rf(ctx, id, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansNameUnpauseResponse)
+			r0 = ret.Get(0).(*PostApiV1ArtifactsIdRevisionsResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, DtoUnpauseRequest, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, name, body, reqEditors...)
+	if rf, ok := ret.Get(1).(func(context.Context, string, HandlersCreateRequest, ...RequestEditorFn) error); ok {
+		r1 = rf(ctx, id, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -421,8 +310,8 @@ func (_m *MockClientWithResponsesInterface) PostPlansNameUnpauseWithResponse(ctx
 	return r0, r1
 }
 
-// PostPlansPreflightWithBodyWithResponse provides a mock function with given fields: ctx, contentType, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansPreflightWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansPreflightResponse, error) {
+// PostApiV1ArtifactsWithBodyWithResponse provides a mock function with given fields: ctx, contentType, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostApiV1ArtifactsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -433,19 +322,19 @@ func (_m *MockClientWithResponsesInterface) PostPlansPreflightWithBodyWithRespon
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PostPlansPreflightWithBodyWithResponse")
+		panic("no return value specified for PostApiV1ArtifactsWithBodyWithResponse")
 	}
 
-	var r0 *PostPlansPreflightResponse
+	var r0 *PostApiV1ArtifactsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*PostPlansPreflightResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error)); ok {
 		return rf(ctx, contentType, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *PostPlansPreflightResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *PostApiV1ArtifactsResponse); ok {
 		r0 = rf(ctx, contentType, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansPreflightResponse)
+			r0 = ret.Get(0).(*PostApiV1ArtifactsResponse)
 		}
 	}
 
@@ -458,8 +347,8 @@ func (_m *MockClientWithResponsesInterface) PostPlansPreflightWithBodyWithRespon
 	return r0, r1
 }
 
-// PostPlansPreflightWithResponse provides a mock function with given fields: ctx, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansPreflightWithResponse(ctx context.Context, body DtoCreatePlanRequest, reqEditors ...RequestEditorFn) (*PostPlansPreflightResponse, error) {
+// PostApiV1ArtifactsWithResponse provides a mock function with given fields: ctx, body, reqEditors
+func (_m *MockClientWithResponsesInterface) PostApiV1ArtifactsWithResponse(ctx context.Context, body HandlersCreateRequest, reqEditors ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error) {
 	_va := make([]interface{}, len(reqEditors))
 	for _i := range reqEditors {
 		_va[_i] = reqEditors[_i]
@@ -470,97 +359,23 @@ func (_m *MockClientWithResponsesInterface) PostPlansPreflightWithResponse(ctx c
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PostPlansPreflightWithResponse")
+		panic("no return value specified for PostApiV1ArtifactsWithResponse")
 	}
 
-	var r0 *PostPlansPreflightResponse
+	var r0 *PostApiV1ArtifactsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, DtoCreatePlanRequest, ...RequestEditorFn) (*PostPlansPreflightResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, HandlersCreateRequest, ...RequestEditorFn) (*PostApiV1ArtifactsResponse, error)); ok {
 		return rf(ctx, body, reqEditors...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, DtoCreatePlanRequest, ...RequestEditorFn) *PostPlansPreflightResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, HandlersCreateRequest, ...RequestEditorFn) *PostApiV1ArtifactsResponse); ok {
 		r0 = rf(ctx, body, reqEditors...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansPreflightResponse)
+			r0 = ret.Get(0).(*PostApiV1ArtifactsResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, DtoCreatePlanRequest, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostPlansWithBodyWithResponse provides a mock function with given fields: ctx, contentType, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPlansResponse, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, contentType, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostPlansWithBodyWithResponse")
-	}
-
-	var r0 *PostPlansResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) (*PostPlansResponse, error)); ok {
-		return rf(ctx, contentType, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader, ...RequestEditorFn) *PostPlansResponse); ok {
-		r0 = rf(ctx, contentType, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansResponse)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader, ...RequestEditorFn) error); ok {
-		r1 = rf(ctx, contentType, body, reqEditors...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PostPlansWithResponse provides a mock function with given fields: ctx, body, reqEditors
-func (_m *MockClientWithResponsesInterface) PostPlansWithResponse(ctx context.Context, body DtoCreatePlanRequest, reqEditors ...RequestEditorFn) (*PostPlansResponse, error) {
-	_va := make([]interface{}, len(reqEditors))
-	for _i := range reqEditors {
-		_va[_i] = reqEditors[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, body)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PostPlansWithResponse")
-	}
-
-	var r0 *PostPlansResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, DtoCreatePlanRequest, ...RequestEditorFn) (*PostPlansResponse, error)); ok {
-		return rf(ctx, body, reqEditors...)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, DtoCreatePlanRequest, ...RequestEditorFn) *PostPlansResponse); ok {
-		r0 = rf(ctx, body, reqEditors...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*PostPlansResponse)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, DtoCreatePlanRequest, ...RequestEditorFn) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, HandlersCreateRequest, ...RequestEditorFn) error); ok {
 		r1 = rf(ctx, body, reqEditors...)
 	} else {
 		r1 = ret.Error(1)
